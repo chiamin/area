@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>方格紙算面積 🐰</title>
+<style>
+  :root {
+    --bg1: #fff7fb;
+    --bg2: #eef9ff;
+    --pink: #ff8fb1;
+    --pink-d: #ff6f9c;
+    --blue: #5cc8ff;
+    --green: #6bd66b;
+    --green-d: #4cba4c;
+    --yellow: #ffd84d;
+    --purple: #b18cff;
+    --ink: #4a4a5a;
+    --grid: #cfe6f5;
+    --grid-bold: #9fd0ea;
+    --shape: rgba(255, 143, 177, 0.35);
+    --shape-line: #ff5c8a;
+    --hint: #9b5cff;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: "Comic Sans MS", "Chalkboard SE", "Noto Sans TC", "PingFang TC",
+      "Microsoft JhengHei", sans-serif;
+    color: var(--ink);
+    background: linear-gradient(160deg, var(--bg1), var(--bg2));
+    overflow-x: hidden;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  #app {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 12px 14px 28px;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--pink-d);
+    text-shadow: 1px 1px 0 #fff;
+  }
+  .stars {
+    font-size: 1.2rem;
+    background: #fff;
+    border: 3px solid var(--yellow);
+    border-radius: 999px;
+    padding: 2px 12px;
+    white-space: nowrap;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.08);
+  }
+
+  /* ── Level bar ── */
+  .levelbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border: 3px solid #ffe1ec;
+    border-radius: 16px;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.05);
+  }
+  .levelbar .badge {
+    background: var(--purple);
+    color: #fff;
+    font-weight: bold;
+    border-radius: 12px;
+    padding: 4px 10px;
+    font-size: .95rem;
+    white-space: nowrap;
+  }
+  .levelbar .lv-name { font-weight: bold; font-size: 1.05rem; }
+  .levelbar .lv-sub { font-size: .8rem; color: #9a9ab0; }
+
+  /* ── Canvas card ── */
+  .canvas-card {
+    background: #fff;
+    border: 4px solid #ffe1ec;
+    border-radius: 22px;
+    padding: 10px;
+    box-shadow: 0 6px 0 rgba(255, 143, 177, 0.18);
+    margin-bottom: 12px;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+    touch-action: manipulation;
+  }
+  .prompt {
+    text-align: center;
+    font-size: 1.05rem;
+    margin: 8px 4px 2px;
+    color: var(--ink);
+    min-height: 1.4em;
+  }
+  .prompt b { color: var(--pink-d); }
+
+  /* ── Answer + keypad ── */
+  .answer-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 6px 0 4px;
+  }
+  .answer-label { font-size: 1.1rem; }
+  .answer-box {
+    min-width: 110px;
+    height: 60px;
+    background: #fffdf5;
+    border: 4px solid var(--yellow);
+    border-radius: 14px;
+    font-size: 2.2rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink);
+  }
+  .answer-box.empty { color: #d9d4c0; }
+
+  .msg {
+    text-align: center;
+    font-size: 1.25rem;
+    font-weight: bold;
+    min-height: 1.6em;
+    margin: 4px 0;
+    transition: transform .1s;
+  }
+  .msg.correct { color: var(--green-d); }
+  .msg.wrong { color: var(--pink-d); }
+  .msg.info { color: var(--blue); }
+  .msg.pop { transform: scale(1.15); }
+
+  .keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    max-width: 360px;
+    margin: 6px auto 0;
+  }
+  .key {
+    height: 64px;
+    border: none;
+    border-radius: 16px;
+    background: linear-gradient(#ffffff, #eef6ff);
+    border-bottom: 4px solid #cfe2f3;
+    font-size: 1.9rem;
+    font-weight: bold;
+    color: var(--ink);
+    cursor: pointer;
+    transition: transform .05s, filter .1s;
+  }
+  .key:active { transform: translateY(3px); border-bottom-width: 1px; }
+  .key.wide { grid-column: span 1; }
+  .key.send {
+    background: linear-gradient(var(--green), var(--green-d));
+    border-bottom-color: #3a9a3a;
+    color: #fff;
+  }
+  .key.del {
+    background: linear-gradient(#ffd6df, var(--pink));
+    border-bottom-color: var(--pink-d);
+    color: #fff;
+    font-size: 1.4rem;
+  }
+  .key:disabled { filter: grayscale(.6) opacity(.6); cursor: default; }
+
+  .actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    border: none;
+    border-radius: 14px;
+    padding: 12px 18px;
+    font-size: 1.05rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform .05s;
+    font-family: inherit;
+  }
+  .btn:active { transform: translateY(2px); }
+  .btn.hint {
+    background: linear-gradient(var(--yellow), #ffc41f);
+    color: #7a5a00;
+    border-bottom: 4px solid #e0a800;
+    animation: wiggle 0.6s ease-in-out infinite;
+  }
+  .btn.ghost {
+    background: #fff;
+    color: var(--ink);
+    border: 3px solid #e0e0ec;
+  }
+  .btn.next {
+    background: linear-gradient(var(--blue), #34b6f5);
+    color: #fff;
+    border-bottom: 4px solid #1f9fe0;
+  }
+
+  @keyframes wiggle {
+    0%,100% { transform: rotate(-3deg) scale(1.02); }
+    50% { transform: rotate(3deg) scale(1.06); }
+  }
+
+  .hidden { display: none !important; }
+
+  /* ── Start screen ── */
+  .start {
+    text-align: center;
+    margin-top: 6vh;
+  }
+  .start .big-emoji { font-size: 4.5rem; }
+  .start h1 { color: var(--pink-d); font-size: 2rem; margin: 6px 0; text-shadow: 2px 2px 0 #fff; }
+  .start p { color: #8a8aa0; font-size: 1.05rem; }
+  .level-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+    margin: 20px auto;
+    max-width: 520px;
+  }
+  .level-card {
+    background: #fff;
+    border: 4px solid #ffe1ec;
+    border-radius: 18px;
+    padding: 14px 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 rgba(255,143,177,.18);
+    transition: transform .08s;
+  }
+  .level-card:active { transform: translateY(2px); }
+  .level-card .lc-emoji { font-size: 2.2rem; }
+  .level-card .lc-name { font-weight: bold; margin-top: 4px; }
+  .level-card .lc-sub { font-size: .78rem; color: #9a9ab0; }
+  .level-card.locked { filter: grayscale(.7) opacity(.55); cursor: default; }
+  .level-card.random { border-color: #cfe6ff; box-shadow: 0 4px 0 rgba(92,200,255,.2); }
+
+  /* ── Celebration overlay ── */
+  #celebrate {
+    position: fixed;
+    inset: 0;
+    background: rgba(255, 247, 251, 0.85);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    backdrop-filter: blur(2px);
+  }
+  #celebrate .cele-emoji { font-size: 6rem; animation: bounce 0.6s ease infinite alternate; }
+  #celebrate h2 { color: var(--pink-d); font-size: 2.2rem; text-shadow: 2px 2px 0 #fff; }
+  @keyframes bounce { from { transform: translateY(0) scale(1);} to { transform: translateY(-22px) scale(1.08);} }
+
+  .confetti {
+    position: fixed;
+    top: -20px;
+    width: 12px;
+    height: 12px;
+    z-index: 49;
+    border-radius: 3px;
+    animation: fall linear forwards;
+  }
+  @keyframes fall {
+    to { transform: translateY(110vh) rotate(720deg); opacity: .9; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- Start / level select -->
+  <section id="startScreen" class="start">
+    <div class="big-emoji">🐰📐</div>
+    <h1>方格紙算面積</h1>
+    <p>數一數、畫畫看，算出形狀裡有幾格！</p>
+    <div id="levelGrid" class="level-grid"></div>
+  </section>
+
+  <!-- Game -->
+  <section id="gameScreen" class="hidden">
+    <header>
+      <div class="title">📐 算面積</div>
+      <div class="stars" id="stars">⭐ 0</div>
+    </header>
+
+    <div class="levelbar">
+      <span class="badge" id="lvBadge">關卡 1</span>
+      <div>
+        <div class="lv-name" id="lvName">數方格</div>
+        <div class="lv-sub" id="lvProgress">第 1 / 5 題</div>
+      </div>
+    </div>
+
+    <div class="canvas-card">
+      <canvas id="board" width="600" height="600"></canvas>
+      <div class="prompt" id="prompt"></div>
+    </div>
+
+    <div class="answer-row">
+      <span class="answer-label">面積 =</span>
+      <div class="answer-box empty" id="answerBox">?</div>
+      <span class="answer-label">格</span>
+    </div>
+
+    <div class="msg" id="msg">&nbsp;</div>
+
+    <div class="keypad" id="keypad">
+      <button class="key" data-d="1">1</button>
+      <button class="key" data-d="2">2</button>
+      <button class="key" data-d="3">3</button>
+      <button class="key" data-d="4">4</button>
+      <button class="key" data-d="5">5</button>
+      <button class="key" data-d="6">6</button>
+      <button class="key" data-d="7">7</button>
+      <button class="key" data-d="8">8</button>
+      <button class="key" data-d="9">9</button>
+      <button class="key del" id="keyDel">⌫</button>
+      <button class="key" data-d="0">0</button>
+      <button class="key send" id="keySend">送出</button>
+    </div>
+
+    <div class="actions">
+      <button class="btn hint hidden" id="hintBtn">💡 給我提示</button>
+      <button class="btn next hidden" id="nextBtn">下一題 ➜</button>
+      <button class="btn ghost" id="homeBtn">🏠 回首頁</button>
+    </div>
+  </section>
+</div>
+
+<!-- Celebration overlay -->
+<div id="celebrate" class="hidden">
+  <div class="cele-emoji">🎉</div>
+  <h2 id="celeText">全部答對！</h2>
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   音效：移植自 arithmetic 的預熱池 + iOS 解鎖機制
+   ============================================================ */
+const SOUND_FILES = { ding: 'ding.mp3', eoh: 'eoh.mp3', cheer: 'cheer.mp3' };
+const SOUND_BASE = 'assets/sounds/';
+const POOL_SIZE = 3;
+const pools = { ding: [], eoh: [], cheer: [] };
+
+function makeElement(name) {
+  const el = new Audio(SOUND_BASE + SOUND_FILES[name]);
+  el.preload = 'auto';
+  el.load(); // 事先 fetch + 解碼，播放才能即時出聲
+  return el;
+}
+for (const name of Object.keys(SOUND_FILES)) {
+  for (let i = 0; i < POOL_SIZE; i++) pools[name].push(makeElement(name));
+}
+
+let audioUnlocked = false, unlockInFlight = false;
+function unlockSounds() {
+  if (audioUnlocked || unlockInFlight) return;
+  unlockInFlight = true;
+  const dummy = new Audio(SOUND_BASE + SOUND_FILES.ding);
+  dummy.muted = true;
+  dummy.play()
+    .then(() => { audioUnlocked = true; unlockInFlight = false; })
+    .catch(() => { unlockInFlight = false; });
+}
+const unlockHandler = () => unlockSounds();
+document.addEventListener('touchstart', unlockHandler, { capture: true, passive: true });
+document.addEventListener('touchend', unlockHandler, { capture: true, passive: true });
+document.addEventListener('mousedown', unlockHandler, { capture: true });
+document.addEventListener('click', unlockHandler, { capture: true });
+
+function playSound(name) {
+  const pool = pools[name];
+  let el = pool.find((e) => e.paused || e.ended);
+  if (!el) el = makeElement(name);
+  else if (el.currentTime !== 0) el.currentTime = 0;
+  el.play().catch((err) => console.warn('play ' + name + ' failed:', err));
+}
+
+/* ============================================================
+   幾何工具
+   ============================================================ */
+// 鞋帶公式：多邊形面積（格點座標），回傳格數
+function polygonArea(pts) {
+  let s = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i], b = pts[(i + 1) % pts.length];
+    s += a.x * b.y - b.x * a.y;
+  }
+  return Math.abs(s) / 2;
+}
+
+/* ============================================================
+   形狀產生器
+   每個形狀回傳：
+     { kind, pts:[{x,y}...], area, prompt, hints:[ {type, ...} ] }
+   座標是「格子座標」（左上角為原點，y 向下）。
+   hints 是按下提示後依序畫出的輔助元素：
+     {type:'bbox'}                       外接矩形
+     {type:'seg', a:{x,y}, b:{x,y}}      一條輔助線
+     {type:'label', x,y, text}          一個小標籤
+   ============================================================ */
+
+function rint(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function choice(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+// 在格子範圍內，把形狀的最小外接框平移到合適位置（置中、留邊）
+function placeShape(pts, gridW, gridH) {
+  const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const w = maxX - minX, h = maxY - minY;
+  const offX = Math.floor((gridW - w) / 2) - minX;
+  const offY = Math.floor((gridH - h) / 2) - minY;
+  return pts.map(p => ({ x: p.x + offX, y: p.y + offY }));
+}
+
+function bboxOf(pts) {
+  const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+  return {
+    minX: Math.min(...xs), maxX: Math.max(...xs),
+    minY: Math.min(...ys), maxY: Math.max(...ys),
+  };
+}
+
+// ── 各形狀產生器（接收期望的格子寬高，回傳 shape）──
+
+// 長方形 / 正方形：直接數格子
+function genRect(gridW, gridH) {
+  const w = rint(2, Math.min(7, gridW - 2));
+  const h = rint(2, Math.min(7, gridH - 2));
+  let pts = [{x:0,y:0},{x:w,y:0},{x:w,y:h},{x:0,y:h}];
+  pts = placeShape(pts, gridW, gridH);
+  const area = polygonArea(pts);
+  const isSquare = w === h;
+  return {
+    kind: 'rect',
+    pts, area,
+    prompt: isSquare
+      ? '這是一個<b>正方形</b>。數一數裡面有幾格？'
+      : '這是一個<b>長方形</b>。一排有幾格、有幾排呢？',
+    hints: gridLinesHint(pts), // 提示：把內部格線加深，方便一格一格數
+  };
+}
+
+// 偶數隨機（保證 底×高 為偶數 → 三角形面積為整數，孩子才數得出整格）
+function rEvenSide(min, max) {
+  // 取 [min,max] 內的偶數
+  const lo = min % 2 === 0 ? min : min + 1;
+  const hi = max % 2 === 0 ? max : max - 1;
+  const n = (hi - lo) / 2;
+  return lo + 2 * Math.floor(Math.random() * (n + 1));
+}
+
+// 直角三角形：外接矩形的一半。讓其中一股為偶數 → 面積必為整數。
+function genRightTriangle(gridW, gridH) {
+  // 寬用偶數，高可任意 → w*h/2 必為整數
+  const w = rEvenSide(2, Math.min(6, gridW - 2));
+  const h = rint(2, Math.min(7, gridH - 2));
+  // 四種直角方向隨機
+  const variants = [
+    [{x:0,y:0},{x:w,y:0},{x:0,y:h}],
+    [{x:0,y:0},{x:w,y:0},{x:w,y:h}],
+    [{x:w,y:0},{x:w,y:h},{x:0,y:h}],
+    [{x:0,y:0},{x:w,y:h},{x:0,y:h}],
+  ];
+  let pts = choice(variants);
+  pts = placeShape(pts, gridW, gridH);
+  const area = polygonArea(pts);
+  return {
+    kind: 'rtri',
+    pts, area,
+    prompt: '這是一個<b>直角三角形</b>。它和一個長方形有什麼關係呢？',
+    hints: bboxHalfHint(pts),
+  };
+}
+
+// 一般三角形：補成外接矩形（= 矩形 − 周圍的直角三角形）
+function genTriangle(gridW, gridH) {
+  // 底用偶數 → 底×高/2 必為整數
+  const w = rEvenSide(4, Math.min(6, gridW - 2));
+  const h = rint(2, Math.min(6, gridH - 2));
+  const apex = rint(0, w); // 頂點在上邊的某個格點
+  let pts = [{x:0,y:h},{x:w,y:h},{x:apex,y:0}];
+  pts = placeShape(pts, gridW, gridH);
+  const area = polygonArea(pts);
+  return {
+    kind: 'tri',
+    pts, area,
+    prompt: '這是一個<b>三角形</b>。試試看把它放進一個長方形裡？',
+    hints: bboxHalfHint(pts),
+  };
+}
+
+// 平行四邊形：切下一個三角形補到另一邊 → 變矩形
+function genParallelogram(gridW, gridH) {
+  const base = rint(3, Math.min(6, gridW - 3));
+  const h = rint(2, Math.min(5, gridH - 2));
+  const slant = rint(1, 2);
+  let pts = [
+    {x:0,y:h},{x:base,y:h},{x:base+slant,y:0},{x:slant,y:0}
+  ];
+  pts = placeShape(pts, gridW, gridH);
+  const area = polygonArea(pts);
+  return {
+    kind: 'para',
+    pts, area,
+    prompt: '這是一個<b>平行四邊形</b>。把斜斜的角切下來補過去，會變成什麼？',
+    hints: parallelogramHint(pts),
+  };
+}
+
+// 梯形：切成「矩形 + 兩個三角形」
+function genTrapezoid(gridW, gridH) {
+  const bottom = rint(4, Math.min(7, gridW - 2));
+  // top 與 bottom 同奇偶（差為 2*topInset）→ 上+下底為偶數 → 面積必為整數。
+  // topInset 上限留 top >= 1。
+  const maxInset = Math.floor((bottom - 1) / 2);
+  const topInset = rint(1, Math.max(1, maxInset));
+  const top = bottom - 2 * topInset;
+  const h = rint(2, Math.min(5, gridH - 2));
+  const left = topInset;
+  let pts = [
+    {x:0,y:h},{x:bottom,y:h},{x:left+top,y:0},{x:left,y:0}
+  ];
+  pts = placeShape(pts, gridW, gridH);
+  const area = polygonArea(pts);
+  return {
+    kind: 'trap',
+    pts, area,
+    prompt: '這是一個<b>梯形</b>。畫兩條線，把它切成中間一塊和旁邊兩塊？',
+    hints: trapezoidHint(pts),
+  };
+}
+
+// 菱形 / 風箏：外接矩形的一半（對角線切成 4 塊）
+function genDiamond(gridW, gridH) {
+  const hw = rint(2, 3); // 半寬
+  const hh = rint(2, 3); // 半高
+  const cx = hw, cy = hh;
+  let pts = [
+    {x:cx,y:0},{x:cx+hw,y:cy},{x:cx,y:cy+hh},{x:cx-hw,y:cy}
+  ];
+  pts = placeShape(pts, gridW, gridH);
+  const area = polygonArea(pts);
+  return {
+    kind: 'diamond',
+    pts, area,
+    prompt: '這是一個<b>菱形</b>。把它框進一個長方形，比一比大小？',
+    hints: bboxHalfHint(pts),
+  };
+}
+
+// 複合形（L 形 / 階梯）：切成兩個矩形
+function genCompound(gridW, gridH) {
+  const a = rint(2, 4), b = rint(2, 4);
+  const c = rint(2, 4), d = rint(2, 4);
+  // L 形
+  let pts = [
+    {x:0,y:0},{x:a,y:0},{x:a,y:b},{x:a+c,y:b},{x:a+c,y:b+d},{x:0,y:b+d}
+  ];
+  pts = placeShape(pts, gridW, gridH);
+  const area = polygonArea(pts);
+  // 切割線：從凹角往下切，分成左右兩個矩形
+  const bb = bboxOf(pts);
+  // 找凹角 x = a 的那條垂直線位置（用實際座標）
+  const splitX = pts[1].x; // {x:a,...} 平移後的 x
+  return {
+    kind: 'comp',
+    pts, area,
+    prompt: '這是一個<b>L 形</b>。畫一條線，把它切成兩個長方形分開算？',
+    hints: [
+      { type: 'seg', a: { x: splitX, y: bb.minY }, b: { x: splitX, y: bb.maxY } },
+      { type: 'label', x: (bb.minX + splitX) / 2, y: (bb.minY + bb.maxY) / 2, text: '①' },
+      { type: 'label', x: (splitX + bb.maxX) / 2, y: pts[2].y + (bb.maxY - pts[2].y) / 2, text: '②' },
+    ],
+  };
+}
+
+// ── 通用提示產生器 ──
+
+// 矩形：加深內部格線（其實畫格線本來就有，這裡用外框強調+逐格）
+function gridLinesHint(pts) {
+  const bb = bboxOf(pts);
+  const hints = [];
+  for (let x = bb.minX + 1; x < bb.maxX; x++)
+    hints.push({ type: 'seg', a: { x, y: bb.minY }, b: { x, y: bb.maxY }, soft: true });
+  for (let y = bb.minY + 1; y < bb.maxY; y++)
+    hints.push({ type: 'seg', a: { x: bb.minX, y }, b: { x: bb.maxX, y }, soft: true });
+  return hints;
+}
+
+// 外接矩形 + 「一半」標示（直角三角形、一般三角形、菱形通用）
+function bboxHalfHint(pts) {
+  return [
+    { type: 'bbox' },
+    { type: 'bboxLabel', text: '想想看：形狀是長方形的一半？' },
+  ];
+}
+
+// 平行四邊形：畫出可切下補過去的直角三角形
+function parallelogramHint(pts) {
+  // pts: [左下, 右下, 右上, 左上]
+  const bb = bboxOf(pts);
+  return [
+    // 從左上垂直往下切（切下左邊的三角形）
+    { type: 'seg', a: { x: pts[3].x, y: bb.minY }, b: { x: pts[3].x, y: bb.maxY } },
+    { type: 'bbox' },
+    { type: 'bboxLabel', text: '切下三角形補到另一邊，變成長方形！' },
+  ];
+}
+
+// 梯形：兩條垂直線切成 矩形+兩三角形
+function trapezoidHint(pts) {
+  // pts: [左下, 右下, 右上, 左上]
+  const bb = bboxOf(pts);
+  return [
+    { type: 'seg', a: { x: pts[3].x, y: bb.minY }, b: { x: pts[3].x, y: bb.maxY } },
+    { type: 'seg', a: { x: pts[2].x, y: bb.minY }, b: { x: pts[2].x, y: bb.maxY } },
+  ];
+}
+
+/* ============================================================
+   關卡設定
+   ============================================================ */
+const LEVELS = [
+  { name: '數方格',       emoji: '🟦', sub: '正方形・長方形', questions: 5, gens: [genRect] },
+  { name: '一半的秘密',   emoji: '🔺', sub: '直角三角形',     questions: 5, gens: [genRightTriangle] },
+  { name: '三角形高手',   emoji: '📐', sub: '各種三角形',     questions: 5, gens: [genTriangle, genRightTriangle] },
+  { name: '滑滑的四邊形', emoji: '🔷', sub: '平行四邊形・菱形', questions: 5, gens: [genParallelogram, genDiamond] },
+  { name: '梯形挑戰',     emoji: '🪜', sub: '梯形',           questions: 5, gens: [genTrapezoid] },
+  { name: '切切看',       emoji: '🧩', sub: 'L 形複合圖形',   questions: 5, gens: [genCompound] },
+];
+const RANDOM_LEVEL = {
+  name: '隨機大挑戰', emoji: '🎲', sub: '全部混合', questions: 8,
+  gens: [genRect, genRightTriangle, genTriangle, genParallelogram, genDiamond, genTrapezoid, genCompound],
+};
+
+const GRID_W = 12, GRID_H = 12; // 邏輯格子數
+const HINT_AFTER_WRONG = 3;     // 答錯幾次後出現提示鈕
+
+/* ============================================================
+   遊戲狀態
+   ============================================================ */
+const state = {
+  level: null,         // 目前 LEVELS 物件（或 RANDOM_LEVEL）
+  levelIndex: -1,      // 在 LEVELS 中的 index；-1 表示隨機關
+  qNum: 0,             // 已進行到第幾題（0-based）
+  shape: null,
+  input: '',
+  wrongCount: 0,       // 本題答錯次數
+  hintsShown: 0,       // 已顯示幾個提示元素
+  hintMode: false,     // 是否已按下提示（會逐步顯示輔助線）
+  solved: false,       // 本題是否已答對
+  submitting: false,
+  stars: loadStars(),
+  unlocked: loadUnlocked(),
+};
+
+function loadStars() {
+  const v = parseInt(localStorage.getItem('area.stars') || '0');
+  return isNaN(v) ? 0 : v;
+}
+function saveStars() { localStorage.setItem('area.stars', String(state.stars)); }
+function loadUnlocked() {
+  const v = parseInt(localStorage.getItem('area.unlocked') || '1');
+  return isNaN(v) || v < 1 ? 1 : v;
+}
+function saveUnlocked() { localStorage.setItem('area.unlocked', String(state.unlocked)); }
+
+/* ============================================================
+   DOM
+   ============================================================ */
+const $ = (id) => document.getElementById(id);
+const startScreen = $('startScreen');
+const gameScreen = $('gameScreen');
+const levelGrid = $('levelGrid');
+const canvas = $('board');
+const ctx = canvas.getContext('2d');
+const promptEl = $('prompt');
+const answerBox = $('answerBox');
+const msgEl = $('msg');
+const hintBtn = $('hintBtn');
+const nextBtn = $('nextBtn');
+const homeBtn = $('homeBtn');
+const keypad = $('keypad');
+const starsEl = $('stars');
+const lvBadge = $('lvBadge');
+const lvName = $('lvName');
+const lvProgress = $('lvProgress');
+const celebrate = $('celebrate');
+const celeText = $('celeText');
+
+/* ============================================================
+   首頁 / 選關
+   ============================================================ */
+function renderLevelSelect() {
+  levelGrid.innerHTML = '';
+  LEVELS.forEach((lv, i) => {
+    const locked = (i + 1) > state.unlocked;
+    const card = document.createElement('div');
+    card.className = 'level-card' + (locked ? ' locked' : '');
+    card.innerHTML =
+      '<div class="lc-emoji">' + (locked ? '🔒' : lv.emoji) + '</div>' +
+      '<div class="lc-name">' + lv.name + '</div>' +
+      '<div class="lc-sub">' + lv.sub + '</div>';
+    if (!locked) card.addEventListener('click', () => startLevel(i));
+    levelGrid.appendChild(card);
+  });
+  // 隨機關（解完前面才開）
+  const allDone = state.unlocked > LEVELS.length;
+  const rc = document.createElement('div');
+  rc.className = 'level-card random' + (allDone ? '' : ' locked');
+  rc.innerHTML =
+    '<div class="lc-emoji">' + (allDone ? RANDOM_LEVEL.emoji : '🔒') + '</div>' +
+    '<div class="lc-name">' + RANDOM_LEVEL.name + '</div>' +
+    '<div class="lc-sub">' + RANDOM_LEVEL.sub + '</div>';
+  if (allDone) rc.addEventListener('click', () => startRandom());
+  levelGrid.appendChild(rc);
+}
+
+function startLevel(i) {
+  unlockSounds();
+  state.level = LEVELS[i];
+  state.levelIndex = i;
+  state.qNum = 0;
+  enterGame();
+}
+function startRandom() {
+  unlockSounds();
+  state.level = RANDOM_LEVEL;
+  state.levelIndex = -1;
+  state.qNum = 0;
+  enterGame();
+}
+function enterGame() {
+  startScreen.classList.add('hidden');
+  gameScreen.classList.remove('hidden');
+  updateStars();
+  nextQuestion();
+}
+
+/* ============================================================
+   出題
+   ============================================================ */
+function nextQuestion() {
+  const gen = choice(state.level.gens);
+  state.shape = gen(GRID_W, GRID_H);
+  state.input = '';
+  state.wrongCount = 0;
+  state.hintsShown = 0;
+  state.hintMode = false;
+  state.solved = false;
+  state.submitting = false;
+
+  promptEl.innerHTML = state.shape.prompt;
+  hintBtn.classList.add('hidden');
+  nextBtn.classList.add('hidden');
+  setMessage('', null);
+  updateAnswerBox();
+  setKeypadEnabled(true);
+  updateLevelBar();
+  draw();
+}
+
+function updateLevelBar() {
+  lvBadge.textContent = state.levelIndex >= 0 ? ('關卡 ' + (state.levelIndex + 1)) : '挑戰';
+  lvName.textContent = state.level.name;
+  lvProgress.textContent = '第 ' + (state.qNum + 1) + ' / ' + state.level.questions + ' 題';
+}
+
+/* ============================================================
+   繪圖
+   ============================================================ */
+function cellSize() {
+  // canvas 內部解析度固定 600，格子數 GRID + 邊距
+  const margin = 1; // 留 1 格邊
+  return canvas.width / (GRID_W + margin * 2);
+}
+function gx(x) { return (x + 1) * cellSize(); } // 格→像素 X（含 1 格邊距）
+function gy(y) { return (y + 1) * cellSize(); }
+
+function draw() {
+  const cs = cellSize();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // 背景
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // 方格紙
+  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = '#d8eefb';
+  for (let i = 0; i <= GRID_W; i++) {
+    ctx.beginPath();
+    ctx.moveTo(gx(i), gy(0));
+    ctx.lineTo(gx(i), gy(GRID_H));
+    ctx.stroke();
+  }
+  for (let j = 0; j <= GRID_H; j++) {
+    ctx.beginPath();
+    ctx.moveTo(gx(0), gy(j));
+    ctx.lineTo(gx(GRID_W), gy(j));
+    ctx.stroke();
+  }
+
+  const shape = state.shape;
+  if (!shape) return;
+
+  // 提示：先畫（在形狀底下）soft 格線 / 外接矩形
+  if (state.hintMode) drawHints();
+
+  // 形狀填色
+  ctx.beginPath();
+  shape.pts.forEach((p, i) => {
+    const X = gx(p.x), Y = gy(p.y);
+    if (i === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
+  });
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(255,143,177,0.30)';
+  ctx.fill();
+  ctx.lineWidth = 4;
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#ff5c8a';
+  ctx.stroke();
+
+  // 頂點小圓點
+  ctx.fillStyle = '#ff5c8a';
+  shape.pts.forEach((p) => {
+    ctx.beginPath();
+    ctx.arc(gx(p.x), gy(p.y), 5, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // 提示的標籤類（畫在最上層）
+  if (state.hintMode) drawHintLabels();
+}
+
+function drawHints() {
+  const cs = cellSize();
+  const shape = state.shape;
+  const shown = shape.hints.slice(0, state.hintsShown);
+  shown.forEach((h) => {
+    if (h.type === 'bbox') {
+      const bb = bboxOf(shape.pts);
+      ctx.save();
+      ctx.setLineDash([8, 6]);
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = '#9b5cff';
+      ctx.strokeRect(gx(bb.minX), gy(bb.minY),
+        (bb.maxX - bb.minX) * cs, (bb.maxY - bb.minY) * cs);
+      ctx.restore();
+    } else if (h.type === 'seg') {
+      ctx.save();
+      if (h.soft) {
+        ctx.setLineDash([4, 4]);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#bda2ff';
+      } else {
+        ctx.setLineDash([8, 6]);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#9b5cff';
+      }
+      ctx.beginPath();
+      ctx.moveTo(gx(h.a.x), gy(h.a.y));
+      ctx.lineTo(gx(h.b.x), gy(h.b.y));
+      ctx.stroke();
+      ctx.restore();
+    }
+  });
+}
+
+function drawHintLabels() {
+  const shape = state.shape;
+  const shown = shape.hints.slice(0, state.hintsShown);
+  shown.forEach((h) => {
+    if (h.type === 'label') {
+      drawTextBubble(gx(h.x), gy(h.y), h.text, '#9b5cff');
+    } else if (h.type === 'bboxLabel') {
+      const bb = bboxOf(shape.pts);
+      drawTextBubble((gx(bb.minX) + gx(bb.maxX)) / 2, gy(bb.minY) - 16, h.text, '#9b5cff');
+    }
+  });
+}
+
+function drawTextBubble(x, y, text, color) {
+  ctx.save();
+  ctx.font = 'bold 22px "Comic Sans MS","Noto Sans TC",sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const w = ctx.measureText(text).width + 20;
+  const h = 32;
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  roundRect(x - w / 2, y - h / 2, w, h, 10);
+  ctx.fill();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = color;
+  roundRect(x - w / 2, y - h / 2, w, h, 10);
+  ctx.stroke();
+  ctx.fillStyle = color;
+  ctx.fillText(text, x, y);
+  ctx.restore();
+}
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+/* ============================================================
+   輸入 / 判分
+   ============================================================ */
+function updateAnswerBox() {
+  if (state.input === '') {
+    answerBox.textContent = '?';
+    answerBox.classList.add('empty');
+  } else {
+    answerBox.textContent = state.input;
+    answerBox.classList.remove('empty');
+  }
+}
+function setMessage(text, type) {
+  msgEl.textContent = text || ' ';
+  msgEl.className = 'msg' + (type ? ' ' + type : '');
+  if (type) {
+    msgEl.classList.add('pop');
+    setTimeout(() => msgEl.classList.remove('pop'), 120);
+  }
+}
+function setKeypadEnabled(on) {
+  keypad.querySelectorAll('.key').forEach((b) => { b.disabled = !on; });
+}
+
+function appendDigit(d) {
+  unlockSounds();
+  if (state.submitting || state.solved) return;
+  if (state.input.length >= 3) return;
+  state.input += String(d);
+  updateAnswerBox();
+}
+function backspace() {
+  if (state.submitting || state.solved) return;
+  state.input = state.input.slice(0, -1);
+  updateAnswerBox();
+}
+
+function submitAnswer() {
+  unlockSounds();
+  if (state.submitting || state.solved) return;
+  if (state.input === '') { setMessage('先輸入答案喔 ✏️', 'info'); return; }
+  const ans = parseInt(state.input);
+  if (ans === state.shape.area) {
+    onCorrect();
+  } else {
+    onWrong();
+  }
+}
+
+function onWrong() {
+  playSound('eoh');
+  state.wrongCount++;
+  setMessage('再想想看 🙈', 'wrong');
+  state.input = '';
+  updateAnswerBox();
+  // 答錯滿次數 → 出現提示鈕（不主動給提示）
+  if (state.wrongCount >= HINT_AFTER_WRONG && !state.hintMode) {
+    hintBtn.classList.remove('hidden');
+  }
+}
+
+function onCorrect() {
+  playSound('ding');
+  state.solved = true;
+  state.submitting = true;
+  setMessage('答對了！太棒了 🎉', 'correct');
+  setKeypadEnabled(false);
+  hintBtn.classList.add('hidden');
+  // 答對加星星（用提示者少一顆，鼓勵自己想）
+  const gained = state.hintMode ? 1 : 2;
+  state.stars += gained;
+  saveStars();
+  updateStars();
+
+  setTimeout(() => {
+    state.qNum++;
+    if (state.qNum >= state.level.questions) {
+      finishLevel();
+    } else {
+      // 顯示「下一題」按鈕，讓孩子自己控制節奏
+      state.submitting = false;
+      nextBtn.classList.remove('hidden');
+    }
+  }, 800);
+}
+
+/* ============================================================
+   提示：逐步顯示輔助線
+   ============================================================ */
+function showHint() {
+  unlockSounds();
+  state.hintMode = true;
+  // 一次顯示一個提示元素；按到底就全部顯示
+  if (state.hintsShown < state.shape.hints.length) {
+    state.hintsShown++;
+  }
+  if (state.hintsShown >= state.shape.hints.length) {
+    hintBtn.textContent = '💡 提示（已全部顯示）';
+  } else {
+    hintBtn.textContent = '💡 再給一點提示';
+  }
+  setMessage('看看這些虛線，幫你把形狀切開！', 'info');
+  draw();
+}
+
+/* ============================================================
+   過關 / 慶祝
+   ============================================================ */
+function finishLevel() {
+  // 解鎖下一關
+  if (state.levelIndex >= 0 && (state.levelIndex + 1) >= state.unlocked) {
+    state.unlocked = state.levelIndex + 2;
+    saveUnlocked();
+  }
+  playSound('cheer');
+  showCelebration();
+}
+
+function showCelebration() {
+  celeText.textContent = pickCheer();
+  celebrate.classList.remove('hidden');
+  launchConfetti();
+  setTimeout(() => {
+    celebrate.classList.add('hidden');
+    goHome();
+  }, 3200);
+}
+function pickCheer() {
+  return choice(['全部答對啦！🎉', '你好厲害！⭐', '太棒了！🐰', '完成挑戰！🏆', '面積小高手！📐']);
+}
+
+function launchConfetti() {
+  const colors = ['#ff8fb1', '#5cc8ff', '#6bd66b', '#ffd84d', '#b18cff'];
+  for (let i = 0; i < 60; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random() * 100 + 'vw';
+    c.style.background = colors[i % colors.length];
+    c.style.animationDuration = (2 + Math.random() * 1.5) + 's';
+    c.style.animationDelay = (Math.random() * 0.6) + 's';
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 4200);
+  }
+}
+
+function goHome() {
+  gameScreen.classList.add('hidden');
+  startScreen.classList.remove('hidden');
+  renderLevelSelect();
+}
+
+function updateStars() { starsEl.textContent = '⭐ ' + state.stars; }
+
+/* ============================================================
+   事件綁定
+   ============================================================ */
+keypad.querySelectorAll('.key[data-d]').forEach((b) => {
+  b.addEventListener('click', () => appendDigit(parseInt(b.dataset.d)));
+});
+$('keyDel').addEventListener('click', backspace);
+$('keySend').addEventListener('click', submitAnswer);
+hintBtn.addEventListener('click', showHint);
+nextBtn.addEventListener('click', () => { nextBtn.classList.add('hidden'); nextQuestion(); });
+homeBtn.addEventListener('click', goHome);
+
+// 實體鍵盤也能玩
+document.addEventListener('keydown', (e) => {
+  if (gameScreen.classList.contains('hidden')) return;
+  if (e.key >= '0' && e.key <= '9') appendDigit(parseInt(e.key));
+  else if (e.key === 'Backspace') backspace();
+  else if (e.key === 'Enter') submitAnswer();
+});
+
+/* ============================================================
+   啟動
+   ============================================================ */
+updateStars();
+renderLevelSelect();
+</script>
+</body>
+</html>

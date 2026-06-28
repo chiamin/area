@@ -40,6 +40,15 @@
     background: #e9ebef;   /* frame 外的背景（電腦上看到的邊框色） */
     -webkit-user-select: none; user-select: none;
     overflow: hidden;
+    overscroll-behavior: none;       /* iPad：禁止整頁橡皮筋捲動 */
+    touch-action: manipulation;      /* 消除雙擊縮放與 300ms 點擊延遲 */
+  }
+
+  /* 所有可點元素：消除點擊延遲/雙擊縮放、防止長按選取與拖曳干擾 */
+  button {
+    touch-action: manipulation;
+    -webkit-user-select: none; user-select: none;
+    -webkit-touch-callout: none;
   }
 
   /* ────────────────────────────────────────────
@@ -776,11 +785,11 @@ function updateMaxArea(delta) {
   state.maxArea = v;
   maxValEl.textContent = v;
 }
-$('maxMinus').addEventListener('click', () => updateMaxArea(-MAX_AREA_STEP));
-$('maxPlus').addEventListener('click', () => updateMaxArea(MAX_AREA_STEP));
+tap($('maxMinus'), () => updateMaxArea(-MAX_AREA_STEP));
+tap($('maxPlus'), () => updateMaxArea(MAX_AREA_STEP));
 
 /* ── 半格（首頁勾選）── */
-halfToggleBtn.addEventListener('click', () => {
+tap(halfToggleBtn, () => {
   state.allowHalf = !state.allowHalf;
   halfToggleBtn.classList.toggle('on', state.allowHalf);
 });
@@ -791,7 +800,7 @@ function toggleHalfPick() {
   state.halfChosen = !state.halfChosen;
   halfPickBtn.classList.toggle('on', state.halfChosen);
 }
-halfPickBtn.addEventListener('click', toggleHalfPick);
+tap(halfPickBtn, toggleHalfPick);
 
 /* ============================================================
    首頁
@@ -824,7 +833,7 @@ function renderMenu() {
     const el = document.createElement('div');
     el.className = 'menu-item';
     el.innerHTML = `<span class="ic-wrap">${shapeIcon(c.icon, 42)}</span>` + `<span class="nm">${c.name}</span>`;
-    el.addEventListener('click', () => startSet(c.gens));
+    tap(el, () => startSet(c.gens));
     grid.appendChild(el);
   });
   menuEl.appendChild(grid);
@@ -1123,9 +1132,9 @@ function undoStroke() {
   renderInk(false);
 }
 
-$('clearInkBtn').addEventListener('click', clearInk);
-$('undoBtn').addEventListener('click', undoStroke);
-eraserBtn.addEventListener('click', toggleEraser);
+tap($('clearInkBtn'), clearInk);
+tap($('undoBtn'), undoStroke);
+tap(eraserBtn, toggleEraser);
 
 /* ── 顏色色塊 ── */
 function renderColors() {
@@ -1135,7 +1144,7 @@ function renderColors() {
     b.className = 'swatch' + (c === state.penColor ? ' on' : '');
     b.style.background = c;
     b.style.color = c;   // currentColor 供 .on 外圈用
-    b.addEventListener('click', () => setColor(c));
+    tap(b, () => setColor(c));
     colorsEl.appendChild(b);
   });
 }
@@ -1155,8 +1164,8 @@ function setPenMode(mode) {
   modeLineBtn.classList.toggle('on', mode === 'line');
   modeFreeBtn.classList.toggle('on', mode === 'free');
 }
-modeLineBtn.addEventListener('click', () => setPenMode('line'));
-modeFreeBtn.addEventListener('click', () => setPenMode('free'));
+tap(modeLineBtn, () => setPenMode('line'));
+tap(modeFreeBtn, () => setPenMode('free'));
 
 /* ============================================================
    輸入 / 判分
@@ -1265,12 +1274,38 @@ function finishSet() {
 /* ============================================================
    事件
    ============================================================ */
+// iPad 防拖曳：用 pointerdown/up 取代 click。手指在按鈕內按下、放開時仍在按鈕內
+// 就觸發（即使中間有微小滑動也算），避免「拖一下 click 被取消」導致按不到。
+// 同一次互動用旗標擋掉隨後的合成 click，避免重複觸發。
+function tap(el, handler) {
+  if (!el) return;
+  let armed = false;
+  el.addEventListener('pointerdown', (e) => {
+    if (e.button != null && e.button !== 0) return;  // 只接受主鍵/觸控/筆
+    armed = true;
+  });
+  el.addEventListener('pointercancel', () => { armed = false; });
+  el.addEventListener('pointerup', (e) => {
+    if (!armed) return;
+    armed = false;
+    // 放開時 pointer 是否仍在按鈕範圍內
+    const r = el.getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return;
+    e.preventDefault();
+    handler(e);
+  });
+  // 後援：鍵盤 Enter/Space 觸發的 click（觸控/滑鼠的 click 因上面 preventDefault 不會重複）
+  el.addEventListener('click', (e) => {
+    if (e.detail === 0) handler(e);   // detail===0 表示由鍵盤觸發，非指標
+  });
+}
+
 padEl.querySelectorAll('button[data-d]').forEach(b =>
-  b.addEventListener('click', () => appendDigit(parseInt(b.dataset.d))));
-$('delBtn').addEventListener('click', backspace);
-$('sendBtn').addEventListener('click', submitAnswer);
-hintBtn.addEventListener('click', showHint);
-$('homeBtn').addEventListener('click', goHome);
+  tap(b, () => appendDigit(parseInt(b.dataset.d))));
+tap($('delBtn'), backspace);
+tap($('sendBtn'), submitAnswer);
+tap(hintBtn, showHint);
+tap($('homeBtn'), goHome);
 
 document.addEventListener('keydown', (e) => {
   if (!gameEl.classList.contains('show')) return;

@@ -25,13 +25,36 @@
 
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
+  html {
+    /* 根字級綁定 frame 的「高度」（內容是垂直堆疊，高度才是限制）。
+       frame 高 = min(100vh, 133.333vw)（見 #frame）。
+       iPad 直向約 1024px 時 → 16px（係數 16/1024 ≈ 0.015625）。
+       所有用 rem 的元素隨之等比縮放，於是不論視窗寬高，
+       版面比例都與 iPad 一致（電腦＝等比縮放的 iPad 畫面，永不裁切）。 */
+    font-size: calc(min(100vh, 133.333vw) * 0.015625);
+  }
   html, body {
     margin: 0; padding: 0; height: 100%;
     font-family: "Inter", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
     color: var(--ink);
-    background: var(--bg);
+    background: #e9ebef;   /* frame 外的背景（電腦上看到的邊框色） */
     -webkit-user-select: none; user-select: none;
     overflow: hidden;
+  }
+
+  /* ────────────────────────────────────────────
+     固定 iPad 直向比例(3:4)的舞台。
+     不論視窗多大，app 內部永遠是同一個比例 → 電腦與 iPad 看起來一致，
+     電腦上等於把 iPad 畫面整個等比縮放。
+     ──────────────────────────────────────────── */
+  #frame {
+    position: absolute; inset: 0; margin: auto;
+    /* 在「高度撐滿」與「寬度撐滿」之間取能完整容納 3:4 的較小者 */
+    width:  min(100vw, 75vh);      /* 75vh = 100vh * 3/4 */
+    height: min(100vh, 133.333vw); /* 133.33vw = 100vw * 4/3 */
+    background: var(--bg);
+    overflow: hidden;
+    box-shadow: 0 0 0 1px rgba(0,0,0,.05);
   }
 
   /* ────────────────────────────────────────────
@@ -41,38 +64,112 @@
     height: 100%;
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
-    gap: 18px; padding: 24px;
+    gap: 1.25rem; padding: 1.5rem;
     overflow: auto;
+    position: relative;
+    /* 柔和漸層 + 細點點圖案，讓首頁不再純灰 */
+    background:
+      radial-gradient(circle at 1px 1px, rgba(120,140,180,0.07) 1px, transparent 0) 0 0 / 22px 22px,
+      linear-gradient(165deg, #fef6fb 0%, #f3f7fe 50%, #eefaf6 100%);
   }
+  /* 角落柔光點綴 */
+  #home::before, #home::after {
+    content: ''; position: absolute; border-radius: 50%;
+    filter: blur(36px); opacity: 0.5; pointer-events: none; z-index: 0;
+  }
+  #home::before { width: 14rem; height: 14rem; top: -3rem; left: -3rem;
+    background: radial-gradient(circle, #ffd9ea, transparent 70%); }
+  #home::after  { width: 16rem; height: 16rem; bottom: -4rem; right: -3rem;
+    background: radial-gradient(circle, #cfe8ff, transparent 70%); }
+  #home > * { position: relative; z-index: 1; }
+
   .hero {
-    width: min(440px, 80vw);
-    max-height: 26vh;
+    width: 75%; max-width: 27rem;
+    max-height: 34%;
     object-fit: contain;
-    margin-bottom: -4px;
+    margin-bottom: -0.25rem;
+    filter: drop-shadow(0 6px 14px rgba(0,0,0,.08));
   }
   #home h1 {
-    font-size: 2.4rem; font-weight: 600; letter-spacing: 0.06em;
-    margin: 0 0 4px; color: var(--ink);
+    font-size: 3rem; font-weight: 800; letter-spacing: 0.08em;
+    margin: 0 0 0.25rem;
+    background: linear-gradient(120deg, #ff8bbd, #8a7bff 55%, #4a90d9);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+    text-shadow: 0 2px 8px rgba(138,123,255,0.12);
   }
-  /* 三大類選單：三個大選項各一排 */
+  /* 設定列：面積最大值 + 半格勾選 */
+  .settings-row {
+    display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; justify-content: center;
+  }
+  /* 半格勾選 */
+  .half-toggle {
+    display: flex; align-items: center; gap: 0.5rem;
+    background: rgba(255,255,255,0.8); border: 1px solid var(--line);
+    border-radius: 999px; padding: 0.55rem 1rem 0.55rem 0.55rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.04); backdrop-filter: blur(4px);
+    cursor: pointer; font-family: inherit;
+    transition: border-color .15s;
+  }
+  .half-toggle:hover { border-color: var(--accent); }
+  .half-box {
+    width: 2rem; height: 2rem; border-radius: 0.5rem;
+    border: 2px solid var(--line); background: var(--bg);
+    color: var(--muted); font-size: 1.1rem; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .half-toggle.on .half-box { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .half-text { font-size: 1.2rem; color: var(--ink); }
+
+  /* 面積最大值設定 */
+  .maxarea {
+    display: flex; align-items: center; gap: 0.75rem;
+    background: rgba(255,255,255,0.8); border: 1px solid var(--line);
+    border-radius: 999px; padding: 0.55rem 1rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+    backdrop-filter: blur(4px);
+  }
+  .maxarea-label { font-size: 1.2rem; color: var(--ink); margin-right: 0.25rem; }
+  .maxarea-val { font-size: 1.7rem; font-weight: 700; min-width: 2.6rem; text-align: center; color: var(--accent); }
+  .step {
+    width: 2.4rem; height: 2.4rem; border-radius: 0.6rem;
+    border: 1px solid var(--line); background: var(--bg);
+    font-size: 1.4rem; line-height: 1; color: var(--ink); cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: inherit;
+    transition: border-color .15s, background .15s;
+  }
+  .step:hover { border-color: var(--accent); color: var(--accent); }
+  .step:active { transform: translateY(1px); }
+
+  /* 形狀選單：每排 3 個、共 2 排 */
   .menu {
-    display: flex; flex-direction: column;
-    gap: 14px;
-    width: 100%; max-width: 360px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    width: 100%; max-width: 34rem;
   }
   .menu-item {
-    background: var(--surface);
+    aspect-ratio: 1 / 1;            /* 正方形卡片 */
+    background: linear-gradient(160deg, #ffffff, #f7faff);
     border: 1px solid var(--line);
-    border-radius: var(--radius);
-    padding: 22px 24px;
+    border-radius: 1.2rem;
     cursor: pointer;
-    display: flex; align-items: center; gap: 18px;
-    transition: border-color .15s, transform .05s, box-shadow .15s;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.7rem;
+    box-shadow: 0 6px 16px rgba(70,107,138,0.10);
+    transition: border-color .15s, transform .08s, box-shadow .15s;
   }
-  .menu-item:hover { border-color: var(--accent); }
-  .menu-item:active { transform: translateY(1px); }
+  .menu-item:hover { border-color: var(--accent); box-shadow: 0 10px 22px rgba(70,107,138,0.18); transform: translateY(-2px); }
+  .menu-item:active { transform: translateY(0); }
+  /* 圖示放在柔和圓形底色上 */
+  .menu-item .ic-wrap {
+    width: 4rem; height: 4rem; border-radius: 50%;
+    background: var(--accent-soft);
+    display: flex; align-items: center; justify-content: center;
+  }
   .menu-item .ic { display: block; flex: 0 0 auto; }
-  .menu-item .nm { font-size: 1.3rem; color: var(--ink); }
+  .menu-item .nm { font-size: 1.25rem; font-weight: 600; color: var(--ink); }
 
   /* ────────────────────────────────────────────
      作答頁：全部塞進一個 iPad 直向畫面（不捲動）
@@ -83,13 +180,13 @@
   .topbar {
     flex: 0 0 auto;
     display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 16px; gap: 8px;
+    padding: 0.625rem 1rem; gap: 0.5rem;
   }
   /* 加大的工具按鈕（上一頁／上一步／橡皮擦／全部擦掉） */
   .tool-btn {
-    height: 48px; padding: 0 18px;
+    height: 3rem; padding: 0 1.125rem;
     border: 1px solid var(--line); background: var(--surface);
-    border-radius: 12px; color: var(--ink);
+    border-radius: 0.75rem; color: var(--ink);
     font-size: 1.05rem; cursor: pointer; font-family: inherit;
     display: inline-flex; align-items: center; justify-content: center;
     transition: border-color .15s, color .15s, background .15s;
@@ -99,14 +196,55 @@
   .tool-btn.on {            /* 橡皮擦啟用中 */
     background: var(--accent); color: #fff; border-color: var(--accent);
   }
-  .topbar .right { display: flex; gap: 8px; }
+  .topbar .right { display: flex; gap: 0.5rem; }
+
+  /* 工具列：筆模式 + 顏色 */
+  .toolbar {
+    flex: 0 0 auto;
+    display: flex; align-items: center; justify-content: center;
+    gap: 1.25rem;
+    padding: 0.25rem 1rem 0.5rem;
+    flex-wrap: wrap;
+  }
+  .pen-modes { display: flex; gap: 0.5rem; }
+  .mode-btn {
+    width: 3rem; height: 3rem; padding: 0;
+    border: 1px solid var(--line); background: var(--surface);
+    border-radius: 0.75rem; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: border-color .15s, background .15s;
+  }
+  .mode-btn svg { fill: none; stroke: var(--ink); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .mode-btn:hover { border-color: var(--accent); }
+  .mode-btn.on { border-color: var(--accent); background: var(--accent-soft); }
+  .mode-btn.on svg { stroke: var(--accent); }
+
+  .colors { display: flex; gap: 0.5rem; align-items: center; }
+  .swatch {
+    width: 1.9rem; height: 1.9rem; border-radius: 50%;
+    border: 2px solid #fff; box-shadow: 0 0 0 1px var(--line);
+    cursor: pointer; padding: 0;
+    transition: transform .08s, box-shadow .15s;
+  }
+  .swatch:hover { transform: scale(1.08); }
+  .swatch.on { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px currentColor; }
+
+  /* 題號標籤（畫布左上角） */
+  .page-tag {
+    position: absolute; top: 0.5rem; left: 0.5rem;
+    background: rgba(255,255,255,0.85);
+    color: var(--muted);
+    font-size: 1.05rem; font-weight: 600;
+    padding: 0.15rem 0.6rem; border-radius: 0.6rem;
+    pointer-events: none;
+  }
 
   /* 畫布區：佔據主要空間 */
   .stage {
     flex: 1 1 auto;
     min-height: 0;
     display: flex; align-items: center; justify-content: center;
-    padding: 0 8px;
+    padding: 0 0.5rem;
     position: relative;
   }
   .canvas-wrap {
@@ -125,7 +263,7 @@
 
   .feedback {
     flex: 0 0 auto;
-    height: 24px; text-align: center;
+    height: 1.5rem; text-align: center;
     font-size: 1.05rem; color: var(--muted);
   }
   .feedback.ok { color: var(--ok); }
@@ -135,9 +273,9 @@
   .bottom {
     flex: 0 0 auto;
     display: flex; align-items: stretch; justify-content: center;
-    gap: 16px;
-    padding: 4px 16px calc(12px + env(safe-area-inset-bottom));
-    max-width: 720px; width: 100%; margin: 0 auto;
+    gap: 1rem;
+    padding: 0.25rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+    max-width: 45rem; width: 100%; margin: 0 auto;
   }
 
   /* 數字鍵盤（放大） */
@@ -145,14 +283,14 @@
     flex: 1 1 auto;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 9px;
-    max-width: 440px;
+    gap: 0.5625rem;
+    max-width: 27.5rem;
   }
   .pad button {
-    height: 62px;
+    height: 3.875rem;
     border: 1px solid var(--line);
     background: var(--surface);
-    border-radius: 13px;
+    border-radius: 0.8125rem;
     font-size: 1.7rem; font-weight: 500; color: var(--ink);
     cursor: pointer;
     transition: background .12s, border-color .12s, transform .04s;
@@ -171,16 +309,16 @@
   /* 右側：答案 + 提示/下一題 */
   .side {
     flex: 0 0 auto;
-    width: 150px;
+    width: 9.375rem;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 14px;
+    gap: 0.875rem;
   }
   .answer {
-    display: flex; align-items: baseline; justify-content: center; gap: 8px;
+    display: flex; align-items: baseline; justify-content: center; gap: 0.5rem;
     font-size: 1.4rem;
   }
   .answer .val {
-    min-width: 72px; text-align: center;
+    min-width: 4.5rem; text-align: center;
     font-size: 2.1rem; font-weight: 600;
     border-bottom: 2px solid var(--line);
     padding-bottom: 2px;
@@ -192,7 +330,7 @@
 
   .pill {
     border: 1px solid var(--line); background: var(--surface);
-    border-radius: 12px; padding: 12px 18px; width: 100%;
+    border-radius: 0.75rem; padding: 0.75rem 1.125rem; width: 100%;
     font-size: 1.05rem; color: var(--ink); cursor: pointer;
     font-family: inherit;
     transition: border-color .15s, color .15s, background .15s;
@@ -200,34 +338,85 @@
   .pill:hover { border-color: var(--accent); }
   .pill.accent { background: var(--accent); color: #fff; border-color: var(--accent); }
   .pill.hint { color: var(--hint); border-color: #ecd9c2; }
+
+  /* 半格選擇框：灰色=不加，點下變深色=加 1/2 */
+  .half-pick {
+    width: 100%; padding: 0.7rem 1rem;
+    border: 2px solid var(--line); background: var(--bg);
+    border-radius: 0.75rem;
+    font-size: 1.25rem; font-weight: 700; color: var(--muted);
+    cursor: pointer; font-family: inherit;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .half-pick.on { background: #34506b; color: #fff; border-color: #34506b; }
+
   .hidden { display: none !important; }
 
-  /* 慶祝 */
+  /* 慶祝：圖片縮放搖擺 + 飄星星。背景透明 → 不遮住原本的作答畫面（仿 arithmetic） */
   #celebrate {
     position: fixed; inset: 0; z-index: 50;
     display: none; align-items: center; justify-content: center;
-    background: rgba(246,247,249,0.92);
-    backdrop-filter: blur(3px);
-    flex-direction: column; gap: 10px;
+    background: transparent;
+    overflow: hidden;
+    pointer-events: none;     /* 慶祝期間不擋互動，純展示 */
   }
   #celebrate.show { display: flex; }
-  #celebrate .mark {
-    width: 96px; height: 96px; border-radius: 50%;
-    border: 3px solid var(--ok);
-    display: flex; align-items: center; justify-content: center;
-    animation: pop .4s ease;
+  #celebrate.fade { animation: cele-fade .5s ease-in forwards; }
+  @keyframes cele-fade { from { opacity: 1; } to { opacity: 0; } }
+
+  .cele-img {
+    width: 80%; max-width: 40rem;
+    object-fit: contain;
+    filter: drop-shadow(0 8px 16px rgba(0,0,0,.12));
+    animation: cele-pop .5s cubic-bezier(0.34,1.56,0.64,1) both,
+               cele-bounce 1.2s ease-in-out 0.5s infinite;
   }
-  #celebrate .mark svg { stroke: var(--ok); }
-  #celebrate .txt { font-size: 1.4rem; color: var(--ink); letter-spacing: .05em; }
-  @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @keyframes cele-pop {
+    0%   { transform: scale(0.2) rotate(-12deg); opacity: 0; }
+    60%  { transform: scale(1.15) rotate(6deg);  opacity: 1; }
+    100% { transform: scale(1)   rotate(0);      opacity: 1; }
+  }
+  @keyframes cele-bounce {            /* 縮放＋左右搖擺，仿 arithmetic */
+    0%,100% { transform: scale(1)    rotate(0deg); }
+    25%     { transform: scale(1.08) rotate(-2.5deg); }
+    50%     { transform: scale(0.97) rotate(0deg); }
+    75%     { transform: scale(1.08) rotate(2.5deg); }
+  }
+
+  .cele-sparkles { position: absolute; inset: 0; pointer-events: none; }
+  .cele-sparkles span {
+    position: absolute; font-size: 2.2rem;
+    animation: cele-sparkle 2.2s ease-out infinite;
+  }
+  @keyframes cele-sparkle {
+    0%   { transform: scale(0.4) translateY(15px); opacity: 0; }
+    25%  { transform: scale(1.2) translateY(0);    opacity: 1; }
+    80%  { transform: scale(1)   translateY(-18px); opacity: 1; }
+    100% { transform: scale(0.6) translateY(-36px); opacity: 0; }
+  }
 </style>
 </head>
 <body>
+
+<!-- 固定 iPad 直向比例的舞台，置中於視窗；電腦上＝縮放後的 iPad 畫面 -->
+<div id="frame">
 
 <!-- ───────────── 首頁 ───────────── -->
 <main id="home">
   <img class="hero" src="assets/images/happy.png" alt="" />
   <h1>算面積</h1>
+  <div class="settings-row">
+    <div class="maxarea">
+      <span class="maxarea-label">面積最大值</span>
+      <button class="step" id="maxMinus">−</button>
+      <span class="maxarea-val" id="maxVal">10</span>
+      <button class="step" id="maxPlus">＋</button>
+    </div>
+    <button class="half-toggle" id="halfToggle">
+      <span class="half-box" id="halfBox">½</span>
+      <span class="half-text">可以有半格</span>
+    </button>
+  </div>
   <div id="menu"></div>
 </main>
 
@@ -242,10 +431,24 @@
     </div>
   </div>
 
+  <!-- 筆模式（直線／自由手寫）＋ 顏色 -->
+  <div class="toolbar">
+    <div class="pen-modes" id="penModes">
+      <button class="mode-btn on" id="modeLine" title="畫直線（輔助線）">
+        <svg viewBox="0 0 40 40" width="34" height="34"><rect x="4" y="4" width="32" height="32" rx="6"/><line x1="11" y1="29" x2="29" y2="11"/></svg>
+      </button>
+      <button class="mode-btn" id="modeFree" title="自由手寫（可在空白處計算）">
+        <svg viewBox="0 0 40 40" width="34" height="34"><rect x="4" y="4" width="32" height="32" rx="6"/><path d="M9 24 C13 14, 17 14, 20 20 S27 26, 31 16"/></svg>
+      </button>
+    </div>
+    <div class="colors" id="colors"></div>
+  </div>
+
   <div class="stage">
     <div class="canvas-wrap" id="canvasWrap">
       <canvas id="board"></canvas>
       <canvas id="ink"></canvas>
+      <div class="page-tag" id="pageTag">1 / 5</div>
     </div>
   </div>
 
@@ -273,20 +476,18 @@
         <span class="val empty" id="answerVal">?</span>
         <span class="unit">格</span>
       </div>
+      <button class="half-pick hidden" id="halfPick">＋ ½ 格</button>
       <button class="pill hint hidden" id="hintBtn">提示</button>
-      <button class="pill accent hidden" id="nextBtn">下一題</button>
     </div>
   </div>
 </main>
 
-<!-- 慶祝 -->
+</div><!-- /#frame -->
+
+<!-- 慶祝：圖片縮放搖擺 + 飄星星（仿 arithmetic 過關動畫） -->
 <div id="celebrate">
-  <div class="mark">
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M5 13l4 4L19 7" />
-    </svg>
-  </div>
-  <div class="txt" id="celeText">完成！</div>
+  <div class="cele-sparkles" id="celeSparkles"></div>
+  <img class="cele-img" src="assets/images/celebration.png" alt="慶祝" draggable="false" />
 </div>
 
 <script>
@@ -423,8 +624,9 @@ function genDiamond(gridW, gridH) {
   let pts = placeShape([{x:cx,y:0},{x:cx+hw,y:cy},{x:cx,y:cy+hh},{x:cx-hw,y:cy}], gridW, gridH);
   return { kind:'diamond', pts, area: polygonArea(pts), hints: bboxHint() };
 }
+// L 形（直角複合圖）——切割成兩個矩形
 function genCompound(gridW, gridH) {
-  const a = rint(2,4), b = rint(2,4), c = rint(2,4), d = rint(2,4);
+  const a = rint(1,4), b = rint(1,4), c = rint(1,4), d = rint(1,4);
   let pts = placeShape(
     [{x:0,y:0},{x:a,y:0},{x:a,y:b},{x:a+c,y:b},{x:a+c,y:b+d},{x:0,y:b+d}], gridW, gridH);
   const bb = bboxOf(pts);
@@ -433,6 +635,59 @@ function genCompound(gridW, gridH) {
     kind:'comp', pts, area: polygonArea(pts),
     hints: [ { type:'seg', a:{x:splitX,y:bb.minY}, b:{x:splitX,y:bb.maxY} } ],
   };
+}
+
+// 把一個多邊形的某些「凸角」用斜線切掉：在角的兩條鄰邊上各退 r1、r2 格，連成斜邊。
+// 切掉的是一個直角三角形，面積 = r1*r2/2，讓 r1*r2 為偶數 → 整體面積仍為整數。
+// 頂點都留在格點。回傳新頂點陣列。
+function cutCorners(pts, count) {
+  let poly = pts.slice();
+  let cut = 0, tries = 0;
+  while (cut < count && tries < 50 && poly.length >= 4) {
+    tries++;
+    const n = poly.length;
+    const i = rint(0, n - 1);
+    const prev = poly[(i - 1 + n) % n], cur = poly[i], next = poly[(i + 1) % n];
+    const d1 = stepToward(cur, prev), d2 = stepToward(cur, next);
+    if (!d1 || !d2) continue;
+    const len1 = segLen(cur, prev), len2 = segLen(cur, next);
+    // 退的格數 (r1,r2)：切掉的直角三角形面積 = r1*r2/2，要整數 → r1*r2 偶數。
+    // 候選含 (1,2)/(2,1)，小形狀也切得動。隨鄰邊長度過濾。
+    const opts = [[1,2],[2,1],[2,2]].filter(([a,b]) => len1 >= a + 1 && len2 >= b + 1);
+    if (!opts.length) continue;
+    const [r1, r2] = choice(opts);
+    const p1 = { x: cur.x + d1.x * r1, y: cur.y + d1.y * r1 };
+    const p2 = { x: cur.x + d2.x * r2, y: cur.y + d2.y * r2 };
+    poly = poly.slice(0, i).concat([p1, p2], poly.slice(i + 1));
+    cut++;
+  }
+  return poly;
+}
+function stepToward(a, b) {       // 從 a 往 b 的單位整數方向（只處理水平/垂直鄰邊）
+  const dx = Math.sign(b.x - a.x), dy = Math.sign(b.y - a.y);
+  if (dx !== 0 && dy === 0) return { x: dx, y: 0 };
+  if (dy !== 0 && dx === 0) return { x: 0, y: dy };
+  return null;                    // 斜邊不再切
+}
+function segLen(a, b) { return Math.abs(a.x - b.x) + Math.abs(a.y - b.y); }
+
+// 一般多邊形：矩形切掉 2~3 個角 → 含斜邊的凸/凹多邊形（頂點在格點，面積整數）
+function genPolygon(gridW, gridH) {
+  const w = rint(3, Math.min(9, gridW - 1));
+  const h = rint(3, Math.min(8, gridH - 1));
+  let rectPts = [{x:0,y:0},{x:w,y:0},{x:w,y:h},{x:0,y:h}];
+  let pts = cutCorners(rectPts, rint(1, 3));
+  pts = placeShape(pts, gridW, gridH);
+  return { kind:'poly', pts, area: polygonArea(pts), hints: bboxHint() };
+}
+
+// L 形複合圖 + 斜切 1~2 角 → 方正多邊形帶斜角
+function genCompoundSkew(gridW, gridH) {
+  const a = rint(2,4), b = rint(2,3), c = rint(2,4), d = rint(2,3);
+  let pts = [{x:0,y:0},{x:a,y:0},{x:a,y:b},{x:a+c,y:b},{x:a+c,y:b+d},{x:0,y:b+d}];
+  pts = cutCorners(pts, rint(1, 2));
+  pts = placeShape(pts, gridW, gridH);
+  return { kind:'polyc', pts, area: polygonArea(pts), hints: bboxHint() };
 }
 
 function gridLinesHint(pts) {
@@ -450,14 +705,26 @@ function bboxHint() { return [ { type:'bbox' } ]; }
    ============================================================ */
 // 首頁三大類；點下去隨機出該類所有形狀
 const CATEGORIES = [
+  // 第一排：基本形狀
+  { key:'rect', name:'方形',   icon:'rect', gens: [genRect] },
   { key:'tri',  name:'三角形', icon:'tri',  gens: [genRightTriangle, genTriangle] },
-  { key:'quad', name:'四邊形', icon:'para', gens: [genRect, genParallelogram, genTrapezoid, genDiamond] },
-  { key:'poly', name:'多邊形', icon:'comp', gens: [genCompound] },
+  { key:'quad', name:'四邊形', icon:'para', gens: [genParallelogram, genTrapezoid, genDiamond] },
+  // 第二排：多邊形與隨機
+  { key:'rpoly', name:'直角多邊形', icon:'comp', gens: [genCompound] },
+  { key:'spoly', name:'斜邊多邊形', icon:'skew', gens: [genPolygon, genCompoundSkew] },
+  { key:'all',   name:'隨機',       icon:'mix',  gens: [
+    genRect, genRightTriangle, genTriangle, genParallelogram, genTrapezoid, genDiamond,
+    genCompound, genPolygon, genCompoundSkew,
+  ] },
 ];
 
 const GRID_W = 12, GRID_H = 12;
 const SET_SIZE = 5;          // 一組幾題
 const HINT_AFTER_WRONG = 3;  // 答錯幾次後出現提示
+
+// 手寫顏色（6 色）
+// 預設紅色（放第一個）；含黑、橙、綠、藍、紫、粉紅
+const PEN_COLORS = ['#d64545', '#2c2f36', '#e08a1e', '#4c9d5e', '#3b7bd0', '#8a5cd0', '#ff7eb0'];
 
 /* ============================================================
    遊戲狀態
@@ -472,7 +739,16 @@ const state = {
   hintMode: false,
   solved: false,
   submitting: false,
-  strokes: [],      // 手寫輔助線：每條是 {a:{px,py}, b:{px,py}}（畫布像素座標，存比例）
+  // 手寫筆畫：每筆 { mode:'line'|'free', color, pts:[{x,y}...] }（比例座標）
+  // line 模式只存首尾兩點；free 模式存完整軌跡。
+  strokes: [],
+  history: [],                // 手寫動作的快照堆疊，「上一步」用來復原任何動作
+  penMode: 'line',            // 'line'=畫直線(拉直)  'free'=自由手寫
+  penColor: PEN_COLORS[0],
+  maxArea: 10,                // 題目面積上限（首頁可設）
+  allowHalf: false,           // 是否允許半格（面積帶 .5）
+  halfChosen: false,          // 作答時是否選了 +1/2
+  usedShapes: new Set(),      // 本組已出過的形狀指紋，用來避免重複
 };
 
 /* ============================================================
@@ -485,8 +761,37 @@ const wrap = $('canvasWrap');
 const bctx = board.getContext('2d');
 const ictx = ink.getContext('2d');
 const answerVal = $('answerVal'), feedbackEl = $('feedback');
-const hintBtn = $('hintBtn'), nextBtn = $('nextBtn'), eraserBtn = $('eraserBtn');
-const padEl = $('pad'), celebrate = $('celebrate'), celeText = $('celeText');
+const hintBtn = $('hintBtn'), eraserBtn = $('eraserBtn');
+const padEl = $('pad'), celebrate = $('celebrate');
+const pageTag = $('pageTag'), colorsEl = $('colors');
+const modeLineBtn = $('modeLine'), modeFreeBtn = $('modeFree');
+const maxValEl = $('maxVal');
+const halfToggleBtn = $('halfToggle'), halfPickBtn = $('halfPick');
+
+/* ── 面積最大值（首頁設定）── */
+const MAX_AREA_MIN = 5, MAX_AREA_MAX = 50, MAX_AREA_STEP = 5;
+function updateMaxArea(delta) {
+  let v = state.maxArea + delta;
+  v = Math.max(MAX_AREA_MIN, Math.min(MAX_AREA_MAX, v));
+  state.maxArea = v;
+  maxValEl.textContent = v;
+}
+$('maxMinus').addEventListener('click', () => updateMaxArea(-MAX_AREA_STEP));
+$('maxPlus').addEventListener('click', () => updateMaxArea(MAX_AREA_STEP));
+
+/* ── 半格（首頁勾選）── */
+halfToggleBtn.addEventListener('click', () => {
+  state.allowHalf = !state.allowHalf;
+  halfToggleBtn.classList.toggle('on', state.allowHalf);
+});
+
+/* ── 作答頁 +1/2 框 ── */
+function toggleHalfPick() {
+  if (state.solved) return;
+  state.halfChosen = !state.halfChosen;
+  halfPickBtn.classList.toggle('on', state.halfChosen);
+}
+halfPickBtn.addEventListener('click', toggleHalfPick);
 
 /* ============================================================
    首頁
@@ -502,9 +807,14 @@ function shapeIcon(key, size) {
     trap: `<path d="M${p} ${s-p} L${s-p} ${s-p} L${s-p-w*0.22} ${p} L${p+w*0.22} ${p} Z"/>`,
     diam: `<path d="M${s/2} ${p} L${s-p} ${s/2} L${s/2} ${s-p} L${p} ${s/2} Z"/>`,
     comp: `<path d="M${p} ${p} L${s*0.55} ${p} L${s*0.55} ${s*0.55} L${s-p} ${s*0.55} L${s-p} ${s-p} L${p} ${s-p} Z"/>`,
+    // 斜邊多邊形：矩形右上角被斜切
+    skew: `<path d="M${p} ${p} L${s-p-w*0.3} ${p} L${s-p} ${p+w*0.3} L${s-p} ${s-p} L${p} ${s-p} Z"/>`,
+    // 隨機：一個方形 + 一個三角形交疊，代表「混合各種形狀」
+    mix: `<rect x="${p}" y="${p+w*0.28}" width="${w*0.55}" height="${w*0.55}"/>`
+       + `<path d="M${p+w*0.4} ${s-p} L${s-p} ${s-p} L${s-p-w*0.3} ${p+w*0.1} Z"/>`,
   };
   return `<svg class="ic" width="${s}" height="${s}" viewBox="0 0 ${s} ${s}"
-            fill="none" stroke="#4a6b8a" stroke-width="2" stroke-linejoin="round">${map[key]}</svg>`;
+            fill="none" stroke="#4a6b8a" stroke-width="2.5" stroke-linejoin="round">${map[key]}</svg>`;
 }
 function renderMenu() {
   menuEl.innerHTML = '';
@@ -513,7 +823,7 @@ function renderMenu() {
   CATEGORIES.forEach(c => {
     const el = document.createElement('div');
     el.className = 'menu-item';
-    el.innerHTML = shapeIcon(c.icon, 40) + `<span class="nm">${c.name}</span>`;
+    el.innerHTML = `<span class="ic-wrap">${shapeIcon(c.icon, 42)}</span>` + `<span class="nm">${c.name}</span>`;
     el.addEventListener('click', () => startSet(c.gens));
     grid.appendChild(el);
   });
@@ -524,6 +834,9 @@ function startSet(gens) {
   unlockSounds();
   state.gens = gens;
   state.qNum = 0;
+  state.usedShapes.clear();           // 新一組，重置防重複記錄
+  setPenMode('line');                 // 預設畫直線
+  setColor(PEN_COLORS[0]);            // 預設黑色
   homeEl.style.display = 'none';
   gameEl.classList.add('show');
   // 等版面就緒再量尺寸
@@ -537,8 +850,33 @@ function goHome() {
 /* ============================================================
    出題
    ============================================================ */
+// 形狀指紋：類型 + 平移正規化後的頂點 + 面積。
+// 同樣大小、同樣形狀（即使位置不同）→ 同指紋，視為「看起來一樣」。
+function shapeKey(s) {
+  const bb = bboxOf(s.pts);
+  const norm = s.pts.map(p => (p.x - bb.minX) + ',' + (p.y - bb.minY)).join(' ');
+  return s.kind + '|' + s.area + '|' + norm;
+}
+
+// 依面積上限抽一個形狀；同一組內盡量不重複（跳過已出過的指紋）。
+function pickShape() {
+  let smallest = null;      // 符合上限的備胎（即使重複）
+  let fallback = null;      // 完全不符上限時的最小備胎
+  for (let i = 0; i < 200; i++) {
+    const s = choice(state.gens)(GRID_W, GRID_H);
+    const fits = s.area <= state.maxArea;
+    const fresh = !state.usedShapes.has(shapeKey(s));
+    if (fits && fresh) return s;                       // 最理想：符合上限又沒出過
+    if (fits && (!smallest)) smallest = s;             // 符合上限但重複，先留著
+    if (!fallback || s.area < fallback.area) fallback = s;
+  }
+  // 抽不到「又新又符合」的：寧可符合上限（即使重複），否則回最小的
+  return smallest || fallback;
+}
+
 function nextQuestion() {
-  state.shape = choice(state.gens)(GRID_W, GRID_H);
+  state.shape = pickShape();
+  state.usedShapes.add(shapeKey(state.shape));   // 記錄本組已出過，避免重複
   state.input = '';
   state.wrongCount = 0;
   state.hintsShown = 0;
@@ -547,13 +885,17 @@ function nextQuestion() {
   state.submitting = false;
   state.strokes = [];
 
+  state.halfChosen = false;
   hintBtn.classList.add('hidden');
-  nextBtn.classList.add('hidden');
   setFeedback('', '');
   updateAnswer();
   setPadEnabled(true);
-  clearInk();
+  // 半格框：只有首頁勾了「可以有半格」才顯示，每題重置成未選
+  halfPickBtn.classList.toggle('hidden', !state.allowHalf);
+  halfPickBtn.classList.remove('on');
+  resetInk();                      // 新題：清空手寫與歷史
   if (eraseMode) toggleEraser();   // 新題回到畫線模式
+  pageTag.textContent = (state.qNum + 1) + ' / ' + SET_SIZE;
   draw();
 }
 
@@ -662,14 +1004,22 @@ function distToSeg(p, a, b) {
   const cx = a.x + t*dx, cy = a.y + t*dy;
   return Math.hypot(p.x - cx, p.y - cy);
 }
-// 擦掉最靠近 p 的一條手寫線（在門檻內才擦）
+// 點 p 到一筆畫的最短距離（直線只有兩點；自由筆跡逐段取最小）
+function distToStroke(p, s) {
+  let d = Infinity;
+  for (let i = 0; i < s.pts.length - 1; i++) {
+    d = Math.min(d, distToSeg(p, s.pts[i], s.pts[i+1]));
+  }
+  return d;
+}
+// 擦掉最靠近 p 的一筆（在門檻內才擦）
 function eraseAt(p) {
   let best = -1, bestD = 0.04;   // 約 4% 畫布寬的命中範圍
   state.strokes.forEach((s, i) => {
-    const d = distToSeg(p, s.a, s.b);
+    const d = distToStroke(p, s);
     if (d < bestD) { bestD = d; best = i; }
   });
-  if (best >= 0) { state.strokes.splice(best, 1); renderInk(false); }
+  if (best >= 0) { pushHistory(); state.strokes.splice(best, 1); renderInk(false); }
 }
 
 function toggleEraser() {
@@ -704,11 +1054,16 @@ function endStroke(e) {
   if (e && typeof e.clientX === 'number') drawingStroke.pts.push(toRatio(e));
   const pts = drawingStroke.pts;
   drawingStroke = null;
-  // 拉直：用首尾點當線段端點（自由手繪 → 自動拉直）
   if (pts.length >= 2) {
     const a = pts[0], b = pts[pts.length - 1];
     const dist = Math.hypot((b.x-a.x), (b.y-a.y));
-    if (dist > 0.03) state.strokes.push({ a, b });   // 太短的點忽略
+    if (state.penMode === 'line') {
+      // 畫直線：用首尾兩點拉直
+      if (dist > 0.03) { pushHistory(); state.strokes.push({ mode:'line', color: state.penColor, pts:[a, b] }); }
+    } else {
+      // 自由手寫：保留完整軌跡（用來計算、隨手畫）
+      if (pts.length > 2 || dist > 0.01) { pushHistory(); state.strokes.push({ mode:'free', color: state.penColor, pts: pts.slice() }); }
+    }
   }
   renderInk(false);
   if (e) e.preventDefault();
@@ -717,30 +1072,91 @@ ink.addEventListener('pointerup', endStroke);
 ink.addEventListener('pointercancel', endStroke);
 ink.addEventListener('pointerleave', (e) => { if (pointerActive) endStroke(e); });
 
+function strokePath(ctx, pts, W, H) {
+  ctx.beginPath();
+  pts.forEach((p, i) => { i ? ctx.lineTo(p.x*W, p.y*H) : ctx.moveTo(p.x*W, p.y*H); });
+  ctx.stroke();
+}
 function renderInk(previewing) {
   const W = ink.width, H = ink.height;
   ictx.clearRect(0, 0, W, H);
-  ictx.lineCap = 'round';
-  ictx.strokeStyle = getCss('--pen');
+  ictx.lineCap = 'round'; ictx.lineJoin = 'round';
   ictx.lineWidth = 2.5 * dpr;
-  // 已完成的直線
-  state.strokes.forEach(s => line(ictx, s.a.x*W, s.a.y*H, s.b.x*W, s.b.y*H));
-  // 預覽：畫使用者目前的原始軌跡（細一點、半透明），放開才拉直
+  // 已完成的每一筆，用各自的顏色
+  state.strokes.forEach(s => {
+    ictx.strokeStyle = s.color || getCss('--pen');
+    strokePath(ictx, s.pts, W, H);
+  });
+  // 預覽目前正在畫的這一筆（半透明）
   if (previewing && drawingStroke && drawingStroke.pts.length) {
     ictx.save();
-    ictx.globalAlpha = 0.45;
-    ictx.beginPath();
-    drawingStroke.pts.forEach((p, i) => { i ? ictx.lineTo(p.x*W, p.y*H) : ictx.moveTo(p.x*W, p.y*H); });
-    ictx.stroke();
+    ictx.globalAlpha = 0.5;
+    ictx.strokeStyle = state.penColor;
+    const pts = drawingStroke.pts;
+    if (state.penMode === 'line' && pts.length >= 2) {
+      // 直線模式：預覽就用首尾兩點畫直線（即時拉直）
+      strokePath(ictx, [pts[0], pts[pts.length - 1]], W, H);
+    } else {
+      strokePath(ictx, pts, W, H);
+    }
     ictx.restore();
   }
 }
-function clearInk() { state.strokes = []; ictx.clearRect(0, 0, ink.width, ink.height); }
-function undoStroke() { state.strokes.pop(); renderInk(false); }
+// 在「會改變 strokes 的動作之前」呼叫：存一份當前狀態的快照
+function pushHistory() {
+  // 深拷貝每一筆（pts 也要複製，避免後續被改動）
+  state.history.push(state.strokes.map(s => ({ mode: s.mode, color: s.color, pts: s.pts.map(p => ({ x: p.x, y: p.y })) })));
+  if (state.history.length > 100) state.history.shift();  // 上限，避免無限增長
+}
+// 全部擦掉（可被「上一步」復原）
+function clearInk() {
+  if (state.strokes.length) pushHistory();
+  state.strokes = [];
+  renderInk(false);
+}
+// 新題時徹底清空（不留歷史）
+function resetInk() { state.strokes = []; state.history = []; ictx.clearRect(0, 0, ink.width, ink.height); }
+// 上一步：復原到上一個快照（不管上一個動作是畫線或擦線）
+function undoStroke() {
+  if (!state.history.length) { state.strokes = []; renderInk(false); return; }
+  state.strokes = state.history.pop();
+  renderInk(false);
+}
 
 $('clearInkBtn').addEventListener('click', clearInk);
 $('undoBtn').addEventListener('click', undoStroke);
 eraserBtn.addEventListener('click', toggleEraser);
+
+/* ── 顏色色塊 ── */
+function renderColors() {
+  colorsEl.innerHTML = '';
+  PEN_COLORS.forEach((c) => {
+    const b = document.createElement('button');
+    b.className = 'swatch' + (c === state.penColor ? ' on' : '');
+    b.style.background = c;
+    b.style.color = c;   // currentColor 供 .on 外圈用
+    b.addEventListener('click', () => setColor(c));
+    colorsEl.appendChild(b);
+  });
+}
+function setColor(c) {
+  state.penColor = c;
+  // 選色等於離開橡皮擦、回到目前的筆模式
+  if (eraseMode) toggleEraser();
+  colorsEl.querySelectorAll('.swatch').forEach((el, i) => {
+    el.classList.toggle('on', PEN_COLORS[i] === c);
+  });
+}
+
+/* ── 筆模式（直線 / 自由手寫）── */
+function setPenMode(mode) {
+  state.penMode = mode;
+  if (eraseMode) toggleEraser();
+  modeLineBtn.classList.toggle('on', mode === 'line');
+  modeFreeBtn.classList.toggle('on', mode === 'free');
+}
+modeLineBtn.addEventListener('click', () => setPenMode('line'));
+modeFreeBtn.addEventListener('click', () => setPenMode('free'));
 
 /* ============================================================
    輸入 / 判分
@@ -769,7 +1185,9 @@ function submitAnswer() {
   unlockSounds();
   if (state.submitting || state.solved) return;
   if (state.input === '') { setFeedback('先輸入答案', ''); return; }
-  if (parseInt(state.input) === state.shape.area) onCorrect();
+  // 答案 = 整數格 +（有選 +1/2 則加 0.5）
+  const ans = parseInt(state.input) + (state.allowHalf && state.halfChosen ? 0.5 : 0);
+  if (ans === state.shape.area) onCorrect();
   else onWrong();
 }
 function onWrong() {
@@ -777,6 +1195,9 @@ function onWrong() {
   state.wrongCount++;
   setFeedback('再試試', 'no');
   state.input = ''; updateAnswer();
+  // 半格選擇也重置，讓孩子重新決定
+  state.halfChosen = false;
+  halfPickBtn.classList.remove('on');
   if (state.wrongCount >= HINT_AFTER_WRONG && !state.hintMode) hintBtn.classList.remove('hidden');
 }
 function onCorrect() {
@@ -788,7 +1209,7 @@ function onCorrect() {
   setTimeout(() => {
     state.qNum++;
     if (state.qNum >= SET_SIZE) finishSet();
-    else { state.submitting = false; nextBtn.classList.remove('hidden'); }
+    else nextQuestion();   // 答對自動換下一題
   }, 800);
 }
 
@@ -806,11 +1227,39 @@ function showHint() {
 /* ============================================================
    完成一組 → 慶祝
    ============================================================ */
+const CELE_EMOJIS = ['⭐','✨','🎉','🌟','🎊','🌸'];
+function renderCeleSparkles() {
+  const el = $('celeSparkles');
+  el.innerHTML = '';
+  // 沿邊緣散佈，避免擋住中間的圖
+  const spots = [
+    [10,16],[86,20],[20,72],[80,76],[50,10],[8,46],
+    [92,50],[42,88],[66,90],[30,30],[72,34],[16,60],
+  ];
+  spots.forEach(([left, top], i) => {
+    const s = document.createElement('span');
+    s.textContent = CELE_EMOJIS[i % CELE_EMOJIS.length];
+    s.style.left = left + '%';
+    s.style.top = top + '%';
+    s.style.animationDelay = (i * 0.12 % 1.2) + 's';
+    el.appendChild(s);
+  });
+}
+
+const CELE_DURATION = 3200;
 function finishSet() {
   playSound('cheer');
-  celeText.textContent = choice(['完成！', '全對！', '太棒了！']);
+  renderCeleSparkles();
+  celebrate.classList.remove('fade');
   celebrate.classList.add('show');
-  setTimeout(() => { celebrate.classList.remove('show'); goHome(); }, 2600);
+  // 重新觸發圖片彈入動畫
+  const img = celebrate.querySelector('.cele-img');
+  if (img) { img.style.animation = 'none'; void img.offsetWidth; img.style.animation = ''; }
+  setTimeout(() => celebrate.classList.add('fade'), CELE_DURATION - 500);
+  setTimeout(() => {
+    celebrate.classList.remove('show', 'fade');
+    goHome();
+  }, CELE_DURATION);
 }
 
 /* ============================================================
@@ -821,7 +1270,6 @@ padEl.querySelectorAll('button[data-d]').forEach(b =>
 $('delBtn').addEventListener('click', backspace);
 $('sendBtn').addEventListener('click', submitAnswer);
 hintBtn.addEventListener('click', showHint);
-nextBtn.addEventListener('click', () => { nextBtn.classList.add('hidden'); nextQuestion(); });
 $('homeBtn').addEventListener('click', goHome);
 
 document.addEventListener('keydown', (e) => {
@@ -834,7 +1282,10 @@ document.addEventListener('keydown', (e) => {
 /* ============================================================
    啟動
    ============================================================ */
+// 預載慶祝大圖，第一次過關時就能即時顯示（不會閃破圖）
+(function preloadCele(){ const im = new Image(); im.src = 'assets/images/celebration.png'; })();
 renderMenu();
+renderColors();
 </script>
 </body>
 </html>

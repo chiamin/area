@@ -54,34 +54,25 @@
     font-size: 2.4rem; font-weight: 600; letter-spacing: 0.06em;
     margin: 0 0 4px; color: var(--ink);
   }
-  /* 分組：四邊形一組、三角形一組 */
-  .group { width: 100%; max-width: 480px; }
-  .group + .group { margin-top: 6px; }
-  .group-title {
-    font-size: .9rem; color: var(--muted); letter-spacing: .08em;
-    margin: 0 4px 8px; font-weight: 600;
-  }
+  /* 三大類選單：三個大選項各一排 */
   .menu {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+    display: flex; flex-direction: column;
+    gap: 14px;
+    width: 100%; max-width: 360px;
   }
   .menu-item {
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    padding: 16px 12px;
-    text-align: center;
+    padding: 22px 24px;
     cursor: pointer;
-    display: flex; align-items: center; justify-content: center; gap: 12px;
+    display: flex; align-items: center; gap: 18px;
     transition: border-color .15s, transform .05s, box-shadow .15s;
   }
   .menu-item:hover { border-color: var(--accent); }
   .menu-item:active { transform: translateY(1px); }
   .menu-item .ic { display: block; flex: 0 0 auto; }
-  .menu-item .nm { font-size: 1.05rem; color: var(--ink); }
-  .menu-item.all { color: var(--accent); font-weight: 600; }
-  .all-row { display: grid; grid-template-columns: 1fr; max-width: 480px; width: 100%; margin-top: 4px; }
+  .menu-item .nm { font-size: 1.3rem; color: var(--ink); }
 
   /* ────────────────────────────────────────────
      作答頁：全部塞進一個 iPad 直向畫面（不捲動）
@@ -92,17 +83,22 @@
   .topbar {
     flex: 0 0 auto;
     display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 16px;
+    padding: 10px 16px; gap: 8px;
   }
-  .icon-btn {
-    width: 40px; height: 40px;
+  /* 加大的工具按鈕（上一頁／上一步／橡皮擦／全部擦掉） */
+  .tool-btn {
+    height: 48px; padding: 0 18px;
     border: 1px solid var(--line); background: var(--surface);
-    border-radius: 10px; color: var(--muted);
-    font-size: 1.1rem; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: border-color .15s, color .15s;
+    border-radius: 12px; color: var(--ink);
+    font-size: 1.05rem; cursor: pointer; font-family: inherit;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: border-color .15s, color .15s, background .15s;
   }
-  .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .tool-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .tool-btn:active { transform: translateY(1px); }
+  .tool-btn.on {            /* 橡皮擦啟用中 */
+    background: var(--accent); color: #fff; border-color: var(--accent);
+  }
   .topbar .right { display: flex; gap: 8px; }
 
   /* 畫布區：佔據主要空間 */
@@ -125,50 +121,39 @@
   }
   #board { background: var(--surface); border: 1px solid var(--line); }
   #ink   { background: transparent; }   /* 手寫層，疊在上面 */
-
-  /* 答案列 */
-  .answer {
-    flex: 0 0 auto;
-    display: flex; align-items: baseline; justify-content: center;
-    gap: 12px;
-    padding: 6px 0 2px;
-    font-size: 1.5rem; color: var(--ink);
-  }
-  .answer .val {
-    min-width: 84px; text-align: center;
-    font-size: 2rem; font-weight: 600;
-    border-bottom: 2px solid var(--line);
-    padding-bottom: 2px;
-    transition: border-color .15s;
-  }
-  .answer .val.empty { color: var(--muted); }
-  .answer .val.filled { border-color: var(--accent); }
-  .answer .unit { font-size: 1.15rem; color: var(--muted); }
+  #ink.erasing { cursor: pointer; }
 
   .feedback {
     flex: 0 0 auto;
-    height: 22px; text-align: center;
-    font-size: 1rem; color: var(--muted);
+    height: 24px; text-align: center;
+    font-size: 1.05rem; color: var(--muted);
   }
   .feedback.ok { color: var(--ok); }
   .feedback.no { color: var(--no); }
 
-  /* 數字鍵盤 */
-  .pad {
+  /* 底部：左鍵盤 + 右側答案/動作，鍵盤因此能更大 */
+  .bottom {
     flex: 0 0 auto;
+    display: flex; align-items: stretch; justify-content: center;
+    gap: 16px;
+    padding: 4px 16px calc(12px + env(safe-area-inset-bottom));
+    max-width: 720px; width: 100%; margin: 0 auto;
+  }
+
+  /* 數字鍵盤（放大） */
+  .pad {
+    flex: 1 1 auto;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 7px;
-    padding: 4px 16px calc(10px + env(safe-area-inset-bottom));
-    max-width: 380px; width: 100%;
-    margin: 0 auto;
+    gap: 9px;
+    max-width: 440px;
   }
   .pad button {
-    height: 46px;
+    height: 62px;
     border: 1px solid var(--line);
     background: var(--surface);
-    border-radius: 11px;
-    font-size: 1.35rem; font-weight: 500; color: var(--ink);
+    border-radius: 13px;
+    font-size: 1.7rem; font-weight: 500; color: var(--ink);
     cursor: pointer;
     transition: background .12s, border-color .12s, transform .04s;
     font-family: inherit;
@@ -178,22 +163,37 @@
   .pad button:disabled { color: var(--muted); background: var(--bg); cursor: default; }
   .pad .send {
     background: var(--accent); color: #fff; border-color: var(--accent);
-    font-size: 1.15rem;
+    font-size: 1.3rem;
   }
   .pad .send:hover { filter: brightness(1.05); }
-  .pad .del { color: var(--muted); font-size: 1.25rem; }
+  .pad .del { color: var(--muted); font-size: 1.5rem; }
 
-  /* 工具列（提示 / 清除手寫 / 下一題） */
-  .tools {
+  /* 右側：答案 + 提示/下一題 */
+  .side {
     flex: 0 0 auto;
-    display: flex; gap: 8px; justify-content: center;
-    padding: 0 16px 6px;
-    min-height: 0;
+    width: 150px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 14px;
   }
+  .answer {
+    display: flex; align-items: baseline; justify-content: center; gap: 8px;
+    font-size: 1.4rem;
+  }
+  .answer .val {
+    min-width: 72px; text-align: center;
+    font-size: 2.1rem; font-weight: 600;
+    border-bottom: 2px solid var(--line);
+    padding-bottom: 2px;
+    transition: border-color .15s;
+  }
+  .answer .val.empty { color: var(--muted); }
+  .answer .val.filled { border-color: var(--accent); }
+  .answer .unit { font-size: 1.1rem; color: var(--muted); }
+
   .pill {
     border: 1px solid var(--line); background: var(--surface);
-    border-radius: 999px; padding: 7px 16px;
-    font-size: .95rem; color: var(--ink); cursor: pointer;
+    border-radius: 12px; padding: 12px 18px; width: 100%;
+    font-size: 1.05rem; color: var(--ink); cursor: pointer;
     font-family: inherit;
     transition: border-color .15s, color .15s, background .15s;
   }
@@ -234,10 +234,11 @@
 <!-- ───────────── 作答頁 ───────────── -->
 <main id="game">
   <div class="topbar">
-    <button class="icon-btn" id="homeBtn" title="回首頁">‹</button>
+    <button class="tool-btn" id="homeBtn">‹ 上一頁</button>
     <div class="right">
-      <button class="icon-btn" id="undoBtn" title="擦掉上一條線">⤺</button>
-      <button class="icon-btn" id="clearInkBtn" title="清除所有手寫線">✕</button>
+      <button class="tool-btn" id="undoBtn">↶ 上一步</button>
+      <button class="tool-btn" id="eraserBtn">橡皮擦</button>
+      <button class="tool-btn" id="clearInkBtn">全部擦掉</button>
     </div>
   </div>
 
@@ -248,31 +249,33 @@
     </div>
   </div>
 
-  <div class="answer">
-    <span class="val empty" id="answerVal">?</span>
-    <span class="unit">格</span>
-  </div>
-
   <div class="feedback" id="feedback"></div>
 
-  <div class="tools">
-    <button class="pill hint hidden" id="hintBtn">提示</button>
-    <button class="pill accent hidden" id="nextBtn">下一題</button>
-  </div>
+  <!-- 底部：左鍵盤 + 右側答案/動作 -->
+  <div class="bottom">
+    <div class="pad" id="pad">
+      <button data-d="1">1</button>
+      <button data-d="2">2</button>
+      <button data-d="3">3</button>
+      <button data-d="4">4</button>
+      <button data-d="5">5</button>
+      <button data-d="6">6</button>
+      <button data-d="7">7</button>
+      <button data-d="8">8</button>
+      <button data-d="9">9</button>
+      <button class="del" id="delBtn">⌫</button>
+      <button data-d="0">0</button>
+      <button class="send" id="sendBtn">送出</button>
+    </div>
 
-  <div class="pad" id="pad">
-    <button data-d="1">1</button>
-    <button data-d="2">2</button>
-    <button data-d="3">3</button>
-    <button data-d="4">4</button>
-    <button data-d="5">5</button>
-    <button data-d="6">6</button>
-    <button data-d="7">7</button>
-    <button data-d="8">8</button>
-    <button data-d="9">9</button>
-    <button class="del" id="delBtn">⌫</button>
-    <button data-d="0">0</button>
-    <button class="send" id="sendBtn">送出</button>
+    <div class="side">
+      <div class="answer">
+        <span class="val empty" id="answerVal">?</span>
+        <span class="unit">格</span>
+      </div>
+      <button class="pill hint hidden" id="hintBtn">提示</button>
+      <button class="pill accent hidden" id="nextBtn">下一題</button>
+    </div>
   </div>
 </main>
 
@@ -445,23 +448,12 @@ function bboxHint() { return [ { type:'bbox' } ]; }
 /* ============================================================
    形狀類型清單（首頁選單 + 隨機）
    ============================================================ */
-// 分組顯示：四邊形一組、三角形一組
-const GROUPS = [
-  { title: '三角形', items: [
-    { key:'rtri', name:'直角三角形', gen: genRightTriangle },
-    { key:'tri',  name:'三角形',     gen: genTriangle },
-  ]},
-  { title: '四邊形', items: [
-    { key:'rect', name:'長方形',     gen: genRect },
-    { key:'para', name:'平行四邊形', gen: genParallelogram },
-    { key:'trap', name:'梯形',       gen: genTrapezoid },
-    { key:'diam', name:'菱形',       gen: genDiamond },
-  ]},
-  { title: '複合圖形', items: [
-    { key:'comp', name:'複合圖形',   gen: genCompound },
-  ]},
+// 首頁三大類；點下去隨機出該類所有形狀
+const CATEGORIES = [
+  { key:'tri',  name:'三角形', icon:'tri',  gens: [genRightTriangle, genTriangle] },
+  { key:'quad', name:'四邊形', icon:'para', gens: [genRect, genParallelogram, genTrapezoid, genDiamond] },
+  { key:'poly', name:'多邊形', icon:'comp', gens: [genCompound] },
 ];
-const ALL_GENS = GROUPS.flatMap(g => g.items.map(t => t.gen));
 
 const GRID_W = 12, GRID_H = 12;
 const SET_SIZE = 5;          // 一組幾題
@@ -471,7 +463,7 @@ const HINT_AFTER_WRONG = 3;  // 答錯幾次後出現提示
    遊戲狀態
    ============================================================ */
 const state = {
-  gens: ALL_GENS,   // 目前出題用的產生器集合
+  gens: CATEGORIES[0].gens,   // 目前出題用的產生器集合
   qNum: 0,
   shape: null,
   input: '',
@@ -493,7 +485,7 @@ const wrap = $('canvasWrap');
 const bctx = board.getContext('2d');
 const ictx = ink.getContext('2d');
 const answerVal = $('answerVal'), feedbackEl = $('feedback');
-const hintBtn = $('hintBtn'), nextBtn = $('nextBtn');
+const hintBtn = $('hintBtn'), nextBtn = $('nextBtn'), eraserBtn = $('eraserBtn');
 const padEl = $('pad'), celebrate = $('celebrate'), celeText = $('celeText');
 
 /* ============================================================
@@ -516,31 +508,16 @@ function shapeIcon(key, size) {
 }
 function renderMenu() {
   menuEl.innerHTML = '';
-  GROUPS.forEach(g => {
-    const grp = document.createElement('div');
-    grp.className = 'group';
-    grp.innerHTML = `<div class="group-title">${g.title}</div>`;
-    const grid = document.createElement('div');
-    grid.className = 'menu';
-    g.items.forEach(t => {
-      const el = document.createElement('div');
-      el.className = 'menu-item';
-      el.innerHTML = shapeIcon(t.key, 40) + `<span class="nm">${t.name}</span>`;
-      el.addEventListener('click', () => startSet([t.gen]));
-      grid.appendChild(el);
-    });
-    grp.appendChild(grid);
-    menuEl.appendChild(grp);
+  const grid = document.createElement('div');
+  grid.className = 'menu';
+  CATEGORIES.forEach(c => {
+    const el = document.createElement('div');
+    el.className = 'menu-item';
+    el.innerHTML = shapeIcon(c.icon, 40) + `<span class="nm">${c.name}</span>`;
+    el.addEventListener('click', () => startSet(c.gens));
+    grid.appendChild(el);
   });
-  // 全部混合（整排）
-  const allRow = document.createElement('div');
-  allRow.className = 'all-row';
-  const all = document.createElement('div');
-  all.className = 'menu-item all';
-  all.textContent = '全部混合';
-  all.addEventListener('click', () => startSet(ALL_GENS));
-  allRow.appendChild(all);
-  menuEl.appendChild(allRow);
+  menuEl.appendChild(grid);
 }
 
 function startSet(gens) {
@@ -576,6 +553,7 @@ function nextQuestion() {
   updateAnswer();
   setPadEnabled(true);
   clearInk();
+  if (eraseMode) toggleEraser();   // 新題回到畫線模式
   draw();
 }
 
@@ -668,14 +646,41 @@ function getCss(v) { return getComputedStyle(document.documentElement).getProper
    ============================================================ */
 let drawingStroke = null;   // { pts:[{x,y}...] } 原始軌跡（比例座標），即時預覽
 let pointerActive = false;
+let eraseMode = false;      // 橡皮擦模式
 
 function toRatio(e) {
   const rect = ink.getBoundingClientRect();
   return { x: (e.clientX - rect.left) / rect.width, y: (e.clientY - rect.top) / rect.height };
 }
 
+// 點 p 到線段 ab 的距離（比例座標）
+function distToSeg(p, a, b) {
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const len2 = dx*dx + dy*dy;
+  let t = len2 ? ((p.x-a.x)*dx + (p.y-a.y)*dy) / len2 : 0;
+  t = Math.max(0, Math.min(1, t));
+  const cx = a.x + t*dx, cy = a.y + t*dy;
+  return Math.hypot(p.x - cx, p.y - cy);
+}
+// 擦掉最靠近 p 的一條手寫線（在門檻內才擦）
+function eraseAt(p) {
+  let best = -1, bestD = 0.04;   // 約 4% 畫布寬的命中範圍
+  state.strokes.forEach((s, i) => {
+    const d = distToSeg(p, s.a, s.b);
+    if (d < bestD) { bestD = d; best = i; }
+  });
+  if (best >= 0) { state.strokes.splice(best, 1); renderInk(false); }
+}
+
+function toggleEraser() {
+  eraseMode = !eraseMode;
+  eraserBtn.classList.toggle('on', eraseMode);
+  ink.classList.toggle('erasing', eraseMode);
+}
+
 ink.addEventListener('pointerdown', (e) => {
   if (state.solved) return;
+  if (eraseMode) { eraseAt(toRatio(e)); e.preventDefault(); return; }
   // 只接受筆 / 滑鼠 / 觸控；忽略多指
   pointerActive = true;
   ink.setPointerCapture(e.pointerId);
@@ -683,6 +688,10 @@ ink.addEventListener('pointerdown', (e) => {
   e.preventDefault();
 });
 ink.addEventListener('pointermove', (e) => {
+  if (eraseMode) {
+    if (e.buttons || e.pressure > 0) eraseAt(toRatio(e));  // 按住拖曳也能擦
+    return;
+  }
   if (!pointerActive || !drawingStroke) return;
   drawingStroke.pts.push(toRatio(e));
   renderInk(true);
@@ -731,6 +740,7 @@ function undoStroke() { state.strokes.pop(); renderInk(false); }
 
 $('clearInkBtn').addEventListener('click', clearInk);
 $('undoBtn').addEventListener('click', undoStroke);
+eraserBtn.addEventListener('click', toggleEraser);
 
 /* ============================================================
    輸入 / 判分

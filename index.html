@@ -41,31 +41,47 @@
     height: 100%;
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
-    gap: 40px; padding: 24px;
+    gap: 18px; padding: 24px;
+    overflow: auto;
+  }
+  .hero {
+    width: min(440px, 80vw);
+    max-height: 26vh;
+    object-fit: contain;
+    margin-bottom: -4px;
   }
   #home h1 {
     font-size: 2.4rem; font-weight: 600; letter-spacing: 0.06em;
-    margin: 0; color: var(--ink);
+    margin: 0 0 4px; color: var(--ink);
+  }
+  /* 分組：四邊形一組、三角形一組 */
+  .group { width: 100%; max-width: 480px; }
+  .group + .group { margin-top: 6px; }
+  .group-title {
+    font-size: .9rem; color: var(--muted); letter-spacing: .08em;
+    margin: 0 4px 8px; font-weight: 600;
   }
   .menu {
     display: grid;
-    grid-template-columns: repeat(3, 150px);
-    gap: 14px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
   }
   .menu-item {
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    padding: 22px 12px;
+    padding: 16px 12px;
     text-align: center;
     cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 12px;
     transition: border-color .15s, transform .05s, box-shadow .15s;
   }
   .menu-item:hover { border-color: var(--accent); }
   .menu-item:active { transform: translateY(1px); }
-  .menu-item .ic { display: block; margin: 0 auto 10px; }
+  .menu-item .ic { display: block; flex: 0 0 auto; }
   .menu-item .nm { font-size: 1.05rem; color: var(--ink); }
-  .menu-item.all { grid-column: span 3; padding: 16px; color: var(--accent); font-weight: 600; }
+  .menu-item.all { color: var(--accent); font-weight: 600; }
+  .all-row { display: grid; grid-template-columns: 1fr; max-width: 480px; width: 100%; margin-top: 4px; }
 
   /* ────────────────────────────────────────────
      作答頁：全部塞進一個 iPad 直向畫面（不捲動）
@@ -94,7 +110,7 @@
     flex: 1 1 auto;
     min-height: 0;
     display: flex; align-items: center; justify-content: center;
-    padding: 0 16px;
+    padding: 0 8px;
     position: relative;
   }
   .canvas-wrap {
@@ -115,7 +131,7 @@
     flex: 0 0 auto;
     display: flex; align-items: baseline; justify-content: center;
     gap: 12px;
-    padding: 10px 0 4px;
+    padding: 6px 0 2px;
     font-size: 1.5rem; color: var(--ink);
   }
   .answer .val {
@@ -131,8 +147,8 @@
 
   .feedback {
     flex: 0 0 auto;
-    height: 26px; text-align: center;
-    font-size: 1.05rem; color: var(--muted);
+    height: 22px; text-align: center;
+    font-size: 1rem; color: var(--muted);
   }
   .feedback.ok { color: var(--ok); }
   .feedback.no { color: var(--no); }
@@ -142,17 +158,17 @@
     flex: 0 0 auto;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    padding: 8px 16px calc(16px + env(safe-area-inset-bottom));
-    max-width: 460px; width: 100%;
+    gap: 7px;
+    padding: 4px 16px calc(10px + env(safe-area-inset-bottom));
+    max-width: 380px; width: 100%;
     margin: 0 auto;
   }
   .pad button {
-    height: 56px;
+    height: 46px;
     border: 1px solid var(--line);
     background: var(--surface);
-    border-radius: 12px;
-    font-size: 1.5rem; font-weight: 500; color: var(--ink);
+    border-radius: 11px;
+    font-size: 1.35rem; font-weight: 500; color: var(--ink);
     cursor: pointer;
     transition: background .12s, border-color .12s, transform .04s;
     font-family: inherit;
@@ -210,8 +226,9 @@
 
 <!-- ───────────── 首頁 ───────────── -->
 <main id="home">
+  <img class="hero" src="assets/images/happy.png" alt="" />
   <h1>算面積</h1>
-  <div class="menu" id="menu"></div>
+  <div id="menu"></div>
 </main>
 
 <!-- ───────────── 作答頁 ───────────── -->
@@ -428,16 +445,23 @@ function bboxHint() { return [ { type:'bbox' } ]; }
 /* ============================================================
    形狀類型清單（首頁選單 + 隨機）
    ============================================================ */
-const TYPES = [
-  { key:'rect',  name:'長方形',     gen: genRect },
-  { key:'rtri',  name:'直角三角形', gen: genRightTriangle },
-  { key:'tri',   name:'三角形',     gen: genTriangle },
-  { key:'para',  name:'平行四邊形', gen: genParallelogram },
-  { key:'trap',  name:'梯形',       gen: genTrapezoid },
-  { key:'diam',  name:'菱形',       gen: genDiamond },
-  { key:'comp',  name:'複合圖形',   gen: genCompound },
+// 分組顯示：四邊形一組、三角形一組
+const GROUPS = [
+  { title: '三角形', items: [
+    { key:'rtri', name:'直角三角形', gen: genRightTriangle },
+    { key:'tri',  name:'三角形',     gen: genTriangle },
+  ]},
+  { title: '四邊形', items: [
+    { key:'rect', name:'長方形',     gen: genRect },
+    { key:'para', name:'平行四邊形', gen: genParallelogram },
+    { key:'trap', name:'梯形',       gen: genTrapezoid },
+    { key:'diam', name:'菱形',       gen: genDiamond },
+  ]},
+  { title: '複合圖形', items: [
+    { key:'comp', name:'複合圖形',   gen: genCompound },
+  ]},
 ];
-const ALL_GENS = TYPES.map(t => t.gen);
+const ALL_GENS = GROUPS.flatMap(g => g.items.map(t => t.gen));
 
 const GRID_W = 12, GRID_H = 12;
 const SET_SIZE = 5;          // 一組幾題
@@ -492,18 +516,31 @@ function shapeIcon(key, size) {
 }
 function renderMenu() {
   menuEl.innerHTML = '';
-  TYPES.forEach(t => {
-    const el = document.createElement('div');
-    el.className = 'menu-item';
-    el.innerHTML = shapeIcon(t.key, 54) + `<span class="nm">${t.name}</span>`;
-    el.addEventListener('click', () => startSet([t.gen]));
-    menuEl.appendChild(el);
+  GROUPS.forEach(g => {
+    const grp = document.createElement('div');
+    grp.className = 'group';
+    grp.innerHTML = `<div class="group-title">${g.title}</div>`;
+    const grid = document.createElement('div');
+    grid.className = 'menu';
+    g.items.forEach(t => {
+      const el = document.createElement('div');
+      el.className = 'menu-item';
+      el.innerHTML = shapeIcon(t.key, 40) + `<span class="nm">${t.name}</span>`;
+      el.addEventListener('click', () => startSet([t.gen]));
+      grid.appendChild(el);
+    });
+    grp.appendChild(grid);
+    menuEl.appendChild(grp);
   });
+  // 全部混合（整排）
+  const allRow = document.createElement('div');
+  allRow.className = 'all-row';
   const all = document.createElement('div');
   all.className = 'menu-item all';
   all.textContent = '全部混合';
   all.addEventListener('click', () => startSet(ALL_GENS));
-  menuEl.appendChild(all);
+  allRow.appendChild(all);
+  menuEl.appendChild(allRow);
 }
 
 function startSet(gens) {
@@ -558,8 +595,8 @@ function resizeCanvas() {
     cv.width = Math.floor(size * dpr);
     cv.height = Math.floor(size * dpr);
   });
-  // 邏輯：(GRID + 邊距2) 格塞進 size
-  const margin = 1;
+  // 邏輯：(GRID + 邊距2) 格塞進 size。邊距小一點 → 格子更大。
+  const margin = 0.5;
   cell = (size * dpr) / (GRID_W + margin * 2);
   originX = cell * margin;
   originY = cell * margin;
